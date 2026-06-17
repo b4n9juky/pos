@@ -1,0 +1,661 @@
+<!doctype html>
+
+<html class="light" lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+        <title>ProInvoice - Invoice INV-2024-001</title>
+        <!-- Fonts -->
+        <link href="https://fonts.googleapis.com" rel="preconnect" />
+        <link
+            crossorigin=""
+            href="https://fonts.gstatic.com"
+            rel="preconnect"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;family=Work+Sans:wght@400;500&amp;display=swap"
+            rel="stylesheet"
+        />
+        <!-- Material Symbols -->
+        <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+            rel="stylesheet"
+        />
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+        <script id="tailwind-config">
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            "on-tertiary-fixed-variant": "#003ea8",
+                            "inverse-surface": "#2d3133",
+                            "secondary-container": "#d5e3fd",
+                            "on-secondary": "#ffffff",
+                            "on-background": "#191c1e",
+                            "surface-dim": "#d8dadc",
+                            "surface-container-highest": "#e0e3e5",
+                            primary: "#000000",
+                            "tertiary-fixed-dim": "#b4c5ff",
+                            "surface-variant": "#e0e3e5",
+                            "on-primary-fixed-variant": "#3f465c",
+                            "on-surface": "#191c1e",
+                            "surface-container-low": "#f2f4f6",
+                            "on-secondary-fixed-variant": "#3a485c",
+                            "on-error": "#ffffff",
+                            "on-primary": "#ffffff",
+                            "primary-fixed-dim": "#bec6e0",
+                            "tertiary-container": "#00174b",
+                            "on-tertiary-fixed": "#00174b",
+                            tertiary: "#000000",
+                            "outline-variant": "#c6c6cd",
+                            "error-container": "#ffdad6",
+                            "surface-container-lowest": "#ffffff",
+                            "on-primary-fixed": "#131b2e",
+                            "inverse-primary": "#bec6e0",
+                            outline: "#76777d",
+                            "inverse-on-surface": "#eff1f3",
+                            "on-primary-container": "#7c839b",
+                            "on-secondary-container": "#57657b",
+                            "surface-container-high": "#e6e8ea",
+                            "on-error-container": "#93000a",
+                            "on-surface-variant": "#45464d",
+                            error: "#ba1a1a",
+                            "on-tertiary": "#ffffff",
+                            "secondary-fixed-dim": "#b9c7e0",
+                            "on-secondary-fixed": "#0d1c2f",
+                            "surface-tint": "#565e74",
+                            background: "#f7f9fb",
+                            "surface-container": "#eceef0",
+                            surface: "#f7f9fb",
+                            "surface-bright": "#f7f9fb",
+                            "primary-fixed": "#dae2fd",
+                            secondary: "#515f74",
+                            "secondary-fixed": "#d5e3fd",
+                            "primary-container": "#131b2e",
+                            "on-tertiary-container": "#497cff",
+                            "tertiary-fixed": "#dbe1ff",
+                        },
+                        borderRadius: {
+                            DEFAULT: "0.125rem",
+                            lg: "0.25rem",
+                            xl: "0.5rem",
+                            full: "0.75rem",
+                        },
+                        spacing: {
+                            gutter: "24px",
+                            unit: "4px",
+                            "container-max": "1120px",
+                            "margin-mobile": "16px",
+                            "margin-desktop": "48px",
+                            "table-cell-padding": "12px 16px",
+                        },
+                        fontFamily: {
+                            "headline-lg": ["Hanken Grotesk"],
+                            display: ["Hanken Grotesk"],
+                            "headline-lg-mobile": ["Hanken Grotesk"],
+                            "body-sm": ["Work Sans"],
+                            "body-md": ["Work Sans"],
+                            "label-sm": ["JetBrains Mono"],
+                            "headline-md": ["Hanken Grotesk"],
+                            "label-md": ["JetBrains Mono"],
+                            "body-lg": ["Work Sans"],
+                        },
+                        fontSize: {
+                            "headline-lg": [
+                                "32px",
+                                {
+                                    lineHeight: "40px",
+                                    letterSpacing: "-0.01em",
+                                    fontWeight: "600",
+                                },
+                            ],
+                            display: [
+                                "48px",
+                                {
+                                    lineHeight: "56px",
+                                    letterSpacing: "-0.02em",
+                                    fontWeight: "700",
+                                },
+                            ],
+                            "headline-lg-mobile": [
+                                "24px",
+                                { lineHeight: "32px", fontWeight: "600" },
+                            ],
+                            "body-sm": [
+                                "14px",
+                                { lineHeight: "20px", fontWeight: "400" },
+                            ],
+                            "body-md": [
+                                "16px",
+                                { lineHeight: "24px", fontWeight: "400" },
+                            ],
+                            "label-sm": [
+                                "10px",
+                                {
+                                    lineHeight: "14px",
+                                    letterSpacing: "0.08em",
+                                    fontWeight: "500",
+                                },
+                            ],
+                            "headline-md": [
+                                "20px",
+                                { lineHeight: "28px", fontWeight: "600" },
+                            ],
+                            "label-md": [
+                                "12px",
+                                {
+                                    lineHeight: "16px",
+                                    letterSpacing: "0.05em",
+                                    fontWeight: "500",
+                                },
+                            ],
+                            "body-lg": [
+                                "18px",
+                                { lineHeight: "28px", fontWeight: "400" },
+                            ],
+                        },
+                    },
+                },
+            };
+        </script>
+        <style>
+            .material-symbols-outlined {
+                font-variation-settings:
+                    "FILL" 0,
+                    "wght" 400,
+                    "GRAD" 0,
+                    "opsz" 24;
+            }
+            @media print {
+                .no-print {
+                    display: none;
+                }
+                body {
+                    background-color: white;
+                }
+                .invoice-canvas {
+                    box-shadow: none !important;
+                    border: none !important;
+                    margin: 0 !important;
+                    width: 100% !important;
+                    max-width: 100% !important;
+                }
+            }
+            .zebra-stripe:nth-child(even) {
+                background-color: #f8fafc;
+            }
+        </style>
+    </head>
+    <body class="bg-surface font-body-md text-on-surface">
+        <!-- TopNavBar Implementation from JSON -->
+        <header
+            class="bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant dark:border-outline no-print"
+        >
+            <div
+                class="flex justify-between items-center px-margin-desktop h-16 w-full max-w-container-max mx-auto"
+            >
+                <div class="flex items-center gap-8">
+                    <span
+                        class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary"
+                        >ProInvoice</span
+                    >
+                    <nav class="hidden md:flex items-center gap-6">
+                        <a
+                            class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-inverse-primary transition-colors cursor-pointer active:opacity-80"
+                            href="#"
+                            >Dashboard</a
+                        >
+                        <a
+                            class="font-body-md text-body-md text-primary dark:text-inverse-primary border-b-2 border-primary dark:border-inverse-primary pb-1 hover:text-primary dark:hover:text-inverse-primary transition-colors cursor-pointer active:opacity-80"
+                            href="#"
+                            >Invoices</a
+                        >
+                        <a
+                            class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-inverse-primary transition-colors cursor-pointer active:opacity-80"
+                            href="#"
+                            >Clients</a
+                        >
+                        <a
+                            class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-inverse-primary transition-colors cursor-pointer active:opacity-80"
+                            href="#"
+                            >Reports</a
+                        >
+                    </nav>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex gap-2">
+                        <button
+                            class="p-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-full"
+                        >
+                            <span class="material-symbols-outlined"
+                                >notifications</span
+                            >
+                        </button>
+                        <button
+                            class="p-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-full"
+                        >
+                            <span class="material-symbols-outlined"
+                                >settings</span
+                            >
+                        </button>
+                    </div>
+                    <button
+                        class="bg-primary text-on-primary px-4 py-2 rounded-sm font-label-md text-label-md uppercase tracking-wider hover:opacity-90 transition-opacity"
+                    >
+                        Create New
+                    </button>
+                    <div
+                        class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant"
+                    >
+                        <img
+                            alt="User profile"
+                            class="w-full h-full object-cover"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhGpRMvK3NJomfB6c4GPRAw0ns7TLY13tuKiNdyBxuMtuYGrLSIv2ou3oWtUtNerCdj3jPcL41kEp2-oU3zAZD91rjJGfmhn_RkD6oXDYTZz-eUd5NqZAsd664RTpU4vlipF2VblMK4fvX6p2kgPcQpgu7KZT0k-NeR_VxAPml2-pVu3feeX5ksQ5BkqGHsN8f44e0T2bZ3MIDVH3B1gbx1dTKLacrEiaj8KJI9IC-1a2oZk5tgofwrIKaU2T_X34LDNxvXmjMz6oW"
+                        />
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Main Content Canvas -->
+        <main
+            class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12"
+        >
+            <!-- Action Bar (Desktop only) -->
+            <div class="flex justify-between items-center mb-8 no-print">
+                <div class="flex items-center gap-2 text-on-surface-variant">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    <span class="font-body-sm text-body-sm">Back to List</span>
+                </div>
+                <div class="flex gap-3">
+                    <button
+                        class="flex items-center gap-2 border border-primary text-primary px-4 py-2 rounded-sm font-label-md text-label-md hover:bg-surface-container-low transition-colors"
+                        onclick="window.print()"
+                    >
+                        <span
+                            class="material-symbols-outlined"
+                            style="font-size: 18px"
+                            >print</span
+                        >
+                        PRINT PDF
+                    </button>
+                    <button
+                        class="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-sm font-label-md text-label-md hover:opacity-90 transition-opacity"
+                    >
+                        <span
+                            class="material-symbols-outlined"
+                            style="font-size: 18px"
+                            >send</span
+                        >
+                        SEND INVOICE
+                    </button>
+                </div>
+            </div>
+            <!-- The Document Sheet (A4-like Proportion) -->
+            <div
+                class="invoice-canvas bg-white min-h-[1056px] w-full max-w-[800px] mx-auto p-12 md:p-16 border border-outline-variant flex flex-col shadow-sm"
+            >
+                <!-- Header Section -->
+                <div class="flex justify-between items-start mb-16">
+                    <div>
+                        <h1
+                            class="font-display text-display text-primary uppercase mb-2"
+                        >
+                            Invoice
+                        </h1>
+                        <p
+                            class="font-label-md text-label-md text-on-surface-variant tracking-[0.2em]"
+                        >
+                            PROINVOICE SYSTEMS INC.
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <div
+                            class="w-16 h-16 bg-primary flex items-center justify-center mb-4 ml-auto"
+                        >
+                            <span
+                                class="material-symbols-outlined text-white text-4xl"
+                                data-weight="fill"
+                                >description</span
+                            >
+                        </div>
+                        <p
+                            class="font-body-sm text-body-sm text-on-surface-variant"
+                        >
+                            123 Enterprise Way<br />Suite 500, New York, NY
+                            10001<br />contact@proinvoice.com
+                        </p>
+                    </div>
+                </div>
+                <!-- Metadata Grid -->
+                <div
+                    class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16 py-8 border-y border-outline-variant"
+                >
+                    <div class="flex flex-col gap-1">
+                        <span
+                            class="font-label-md text-label-md text-outline uppercase"
+                            >Invoice Number</span
+                        >
+                        <span
+                            class="font-headline-md text-headline-md text-primary"
+                            >INV-2024-001</span
+                        >
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <span
+                            class="font-label-md text-label-md text-outline uppercase"
+                            >Issue Date</span
+                        >
+                        <span
+                            class="font-body-md text-body-md font-medium text-on-surface"
+                            >Oct 24, 2024</span
+                        >
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <span
+                            class="font-label-md text-label-md text-outline uppercase"
+                            >Due Date</span
+                        >
+                        <span
+                            class="font-body-md text-body-md font-medium text-on-surface"
+                            >Nov 07, 2024</span
+                        >
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <span
+                            class="font-label-md text-label-md text-outline uppercase"
+                            >Status</span
+                        >
+                        <div
+                            class="inline-flex items-center px-2 py-1 bg-secondary-container text-on-secondary-container rounded-sm w-fit font-label-sm text-label-sm uppercase"
+                        >
+                            Pending
+                        </div>
+                    </div>
+                </div>
+                <!-- Client Info -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
+                    <div class="flex flex-col gap-4">
+                        <h3
+                            class="font-label-md text-label-md text-outline uppercase border-b border-outline-variant pb-2"
+                        >
+                            Bill To
+                        </h3>
+                        <div class="font-body-md text-body-md">
+                            <p class="font-bold text-on-surface text-lg">
+                                Acme Corporation
+                            </p>
+                            <p class="text-on-surface-variant">
+                                Attn: Sarah Jenkins
+                            </p>
+                            <p class="text-on-surface-variant">
+                                456 Innovation Blvd
+                            </p>
+                            <p class="text-on-surface-variant">
+                                San Francisco, CA 94103
+                            </p>
+                            <p class="text-on-surface-variant mt-2 underline">
+                                accounts@acme-corp.com
+                            </p>
+                        </div>
+                    </div>
+                    <div
+                        class="flex flex-col gap-4 bg-surface-container-lowest p-6 border border-outline-variant"
+                    >
+                        <h3
+                            class="font-label-md text-label-md text-outline uppercase border-b border-outline-variant pb-2"
+                        >
+                            Payment Methods
+                        </h3>
+                        <div
+                            class="font-body-sm text-body-sm text-on-surface-variant flex flex-col gap-2"
+                        >
+                            <div class="flex justify-between">
+                                <span>Bank Transfer:</span>
+                                <span
+                                    class="font-label-sm text-label-sm text-on-surface"
+                                    >CHASE **** 9928</span
+                                >
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Swift Code:</span>
+                                <span
+                                    class="font-label-sm text-label-sm text-on-surface"
+                                    >CHUS33XX</span
+                                >
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Reference:</span>
+                                <span
+                                    class="font-label-sm text-label-sm text-on-surface"
+                                    >INV-2024-001</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Line Items Table -->
+                <div class="flex-grow">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b-2 border-primary">
+                                <th
+                                    class="py-4 font-label-md text-label-md text-primary uppercase"
+                                >
+                                    Description
+                                </th>
+                                <th
+                                    class="py-4 font-label-md text-label-md text-primary uppercase text-center w-24"
+                                >
+                                    Qty
+                                </th>
+                                <th
+                                    class="py-4 font-label-md text-label-md text-primary uppercase text-right w-32"
+                                >
+                                    Unit Price
+                                </th>
+                                <th
+                                    class="py-4 font-label-md text-label-md text-primary uppercase text-right w-32"
+                                >
+                                    Total
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-body-md text-body-md">
+                            <tr
+                                class="zebra-stripe border-b border-outline-variant"
+                            >
+                                <td class="py-6 pr-4">
+                                    <span class="font-bold block"
+                                        >Cloud Architecture Consulting</span
+                                    >
+                                    <span
+                                        class="text-body-sm text-on-surface-variant"
+                                        >Q4 infrastructure audit and
+                                        optimization strategy sessions.</span
+                                    >
+                                </td>
+                                <td class="py-6 text-center">20.0</td>
+                                <td class="py-6 text-right">$250.00</td>
+                                <td class="py-6 text-right font-medium">
+                                    $5,000.00
+                                </td>
+                            </tr>
+                            <tr
+                                class="zebra-stripe border-b border-outline-variant"
+                            >
+                                <td class="py-6 pr-4">
+                                    <span class="font-bold block"
+                                        >Front-end Development (Sprint 4)</span
+                                    >
+                                    <span
+                                        class="text-body-sm text-on-surface-variant"
+                                        >UI implementation for the dashboard
+                                        analytics module.</span
+                                    >
+                                </td>
+                                <td class="py-6 text-center">45.0</td>
+                                <td class="py-6 text-right">$150.00</td>
+                                <td class="py-6 text-right font-medium">
+                                    $6,750.00
+                                </td>
+                            </tr>
+                            <tr
+                                class="zebra-stripe border-b border-outline-variant"
+                            >
+                                <td class="py-6 pr-4">
+                                    <span class="font-bold block"
+                                        >Project Management Fee</span
+                                    >
+                                    <span
+                                        class="text-body-sm text-on-surface-variant"
+                                        >Monthly administrative overhead and
+                                        coordination.</span
+                                    >
+                                </td>
+                                <td class="py-6 text-center">1.0</td>
+                                <td class="py-6 text-right">$1,200.00</td>
+                                <td class="py-6 text-right font-medium">
+                                    $1,200.00
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Financial Summary -->
+                <div class="mt-12 flex justify-end">
+                    <div class="w-full md:w-80 flex flex-col gap-4">
+                        <div
+                            class="flex justify-between items-center font-body-md text-body-md"
+                        >
+                            <span class="text-on-surface-variant"
+                                >Subtotal</span
+                            >
+                            <span>$12,950.00</span>
+                        </div>
+                        <div
+                            class="flex justify-between items-center font-body-md text-body-md"
+                        >
+                            <span class="text-on-surface-variant"
+                                >Tax (8%)</span
+                            >
+                            <span>$1,036.00</span>
+                        </div>
+                        <div
+                            class="flex justify-between items-center pt-4 border-t border-outline font-headline-md text-headline-md text-primary"
+                        >
+                            <span class="font-bold">Total Amount</span>
+                            <span class="font-bold">$13,986.00</span>
+                        </div>
+                        <div
+                            class="mt-4 p-4 bg-surface-container-low border-l-4 border-primary"
+                        >
+                            <p
+                                class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-1"
+                            >
+                                Balance Due (USD)
+                            </p>
+                            <p
+                                class="font-headline-lg text-headline-lg text-primary"
+                            >
+                                $13,986.00
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Footer Notes -->
+                <div class="mt-24 pt-8 border-t border-outline-variant">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        <div>
+                            <h4
+                                class="font-label-md text-label-md text-primary uppercase mb-3"
+                            >
+                                Notes &amp; Terms
+                            </h4>
+                            <p
+                                class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed"
+                            >
+                                Please make checks payable to ProInvoice Systems
+                                Inc. All payments are due within 14 days of the
+                                invoice date. A late fee of 1.5% per month will
+                                be charged on all overdue accounts.
+                            </p>
+                        </div>
+                        <div class="flex flex-col items-end justify-end">
+                            <p
+                                class="font-headline-md text-headline-md text-primary mb-2"
+                            >
+                                Thank you for your business.
+                            </p>
+                            <div
+                                class="h-[1px] w-48 bg-outline-variant mb-2"
+                            ></div>
+                            <p
+                                class="font-label-md text-label-md text-outline uppercase"
+                            >
+                                Authorized Signature
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <!-- Footer Implementation from JSON -->
+        <footer
+            class="bg-surface-container-low dark:bg-inverse-surface border-t border-outline-variant dark:border-outline no-print mt-12"
+        >
+            <div
+                class="flex flex-col md:flex-row justify-between items-center px-margin-desktop py-8 w-full max-w-container-max mx-auto"
+            >
+                <div class="flex flex-col md:flex-row items-center gap-6">
+                    <span
+                        class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary"
+                        >ProInvoice</span
+                    >
+                    <span
+                        class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed"
+                        >© 2024 ProInvoice Systems. All rights reserved.</span
+                    >
+                </div>
+                <nav class="flex gap-6 mt-6 md:mt-0">
+                    <a
+                        class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed hover:underline transition-all"
+                        href="#"
+                        >Privacy Policy</a
+                    >
+                    <a
+                        class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed hover:underline transition-all"
+                        href="#"
+                        >Terms of Service</a
+                    >
+                    <a
+                        class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed hover:underline transition-all"
+                        href="#"
+                        >Support</a
+                    >
+                    <a
+                        class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed hover:underline transition-all"
+                        href="#"
+                        >Contact</a
+                    >
+                </nav>
+            </div>
+        </footer>
+        <script>
+            // Micro-interaction for hover states on rows
+            document.querySelectorAll("tr.zebra-stripe").forEach((row) => {
+                row.addEventListener("mouseenter", () => {
+                    row.style.boxShadow = "inset 4px 0 0 0 #000000";
+                });
+                row.addEventListener("mouseleave", () => {
+                    row.style.boxShadow = "none";
+                });
+            });
+        </script>
+    </body>
+</html>
