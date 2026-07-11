@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# POS — Point of Sales
 
-## Getting Started
+Next.js 16 POS application with Drizzle ORM (MySQL), NextAuth v5, Tailwind CSS v4, and shadcn/ui.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 20+
+- MySQL running on `localhost:3306`
+- Database `pos_db` created (`CREATE DATABASE pos_db;`)
+
+## Setup
+
+```bash
+npm install
+```
+
+Create `.env` in the project root:
+
+```
+DATABASE_URL=mysql://root:@localhost:3306/pos_db
+AUTH_SECRET=<any-random-string>
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+Push schema and seed data:
+
+```bash
+npm run db:push
+npm run db:seed
+```
+
+Start dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Default credentials
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Role     | Email            | Password |
+|----------|------------------|----------|
+| Admin    | admin@pos.com    | password |
+| Cashier  | cashier@pos.com  | password |
 
-## Learn More
+## Commands
 
-To learn more about Next.js, take a look at the following resources:
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint check |
+| `npm run db:seed` | Seed database |
+| `npm run db:generate` | Generate Drizzle migration |
+| `npm run db:push` | Push schema to database |
+| `npm run db:migrate` | Run pending migrations |
+| `npm run db:studio` | Open Drizzle Studio |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Keyboard shortcuts (POS page)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Key | Context | Action |
+|-----|---------|--------|
+| `F2` | Anywhere | Focus search input |
+| `Escape` | Search focused | Clear search and blur input |
+| `1`–`9` | Grid visible | Add the Nth visible product to cart |
+| `Delete` | Cart has items | Remove the last cart item |
+| `F4` | Cart has items | Open checkout modal |
+| `F8` | Checkout modal | Quick-cash: auto-fills cash amount and submits |
+| `Escape` | Modal open | Close modal (native) |
 
-## Deploy on Vercel
+Page-level shortcuts (`F2`, `Escape`, `1-9`, `Delete`, `F4`) are disabled while the checkout modal is open to avoid conflicts. Modal shortcuts (`F8`, `Escape`) only fire when the modal is open.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Architecture: `src/hooks/use-keyboard.ts` registers global `keydown` listeners. The POS page (`src/app/(dashboard)/pos/page.tsx`) orchestrates page shortcuts. `CheckoutModal` handles `F8` internally.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Tech stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Auth:** NextAuth v5 (credentials, JWT)
+- **Database:** MySQL + Drizzle ORM
+- **UI:** shadcn/ui (base-nova), Tailwind CSS v4
+- **State:** TanStack React Query + React Context (cart)
+- **Icons:** lucide-react
