@@ -24,18 +24,18 @@ async function seed() {
   console.log("Categories seeded")
 
   await db.insert(products).values([
-    { name: "Nasi Goreng", sku: "FNB-001", barcode: "8991234567890", description: "Indonesian fried rice", price: "25000", costPrice: "15000", stock: 50, minStock: 10, categoryId: 1, active: true },
-    { name: "Mie Goreng", sku: "FNB-002", barcode: "8991234567891", description: "Indonesian fried noodles", price: "22000", costPrice: "13000", stock: 45, minStock: 10, categoryId: 1, active: true },
-    { name: "Es Teh Manis", sku: "FNB-003", barcode: "8991234567892", description: "Sweet iced tea", price: "8000", costPrice: "3000", stock: 100, minStock: 20, categoryId: 1, active: true },
-    { name: "Kopi Susu", sku: "FNB-004", barcode: "8991234567893", description: "Iced coffee with milk", price: "18000", costPrice: "8000", stock: 60, minStock: 15, categoryId: 1, active: true },
-    { name: "Wireless Mouse", sku: "ELC-001", barcode: "8991234567894", description: "Ergonomic wireless mouse", price: "85000", costPrice: "55000", stock: 30, minStock: 5, categoryId: 2, active: true },
-    { name: "USB-C Hub", sku: "ELC-002", barcode: "8991234567895", description: "7-in-1 USB-C hub", price: "150000", costPrice: "95000", stock: 20, minStock: 5, categoryId: 2, active: true },
-    { name: "Bluetooth Speaker", sku: "ELC-003", barcode: "8991234567896", description: "Portable bluetooth speaker", price: "120000", costPrice: "75000", stock: 25, minStock: 5, categoryId: 2, active: true },
-    { name: "T-Shirt Casual", sku: "CLT-001", barcode: "8991234567897", description: "Cotton casual t-shirt", price: "65000", costPrice: "35000", stock: 80, minStock: 20, categoryId: 3, active: true },
-    { name: "Jeans Slim Fit", sku: "CLT-002", barcode: "8991234567898", description: "Slim fit denim jeans", price: "150000", costPrice: "90000", stock: 40, minStock: 10, categoryId: 3, active: true },
-    { name: "Notebook A5", sku: "STN-001", barcode: "8991234567899", description: "Hardcover notebook A5", price: "25000", costPrice: "12000", stock: 100, minStock: 30, categoryId: 4, active: true },
-    { name: "Hand Sanitizer", sku: "HLT-001", barcode: "8991234567900", description: "Alcohol-based hand sanitizer 60ml", price: "15000", costPrice: "8000", stock: 75, minStock: 20, categoryId: 5, active: true },
-    { name: "Face Mask Box", sku: "HLT-002", barcode: "8991234567901", description: "50 pcs disposable face masks", price: "35000", costPrice: "20000", stock: 40, minStock: 10, categoryId: 5, active: true },
+    { name: "Nasi Goreng", sku: "FNB-001", barcode: "8991234567890", description: "Indonesian fried rice", price: "25000", costPrice: "15000", stock: 50, minStock: 10, categoryId: 1, taxable: true, active: true },
+    { name: "Mie Goreng", sku: "FNB-002", barcode: "8991234567891", description: "Indonesian fried noodles", price: "22000", costPrice: "13000", stock: 45, minStock: 10, categoryId: 1, taxable: true, active: true },
+    { name: "Es Teh Manis", sku: "FNB-003", barcode: "8991234567892", description: "Sweet iced tea", price: "8000", costPrice: "3000", stock: 100, minStock: 20, categoryId: 1, taxable: true, active: true },
+    { name: "Kopi Susu", sku: "FNB-004", barcode: "8991234567893", description: "Iced coffee with milk", price: "18000", costPrice: "8000", stock: 60, minStock: 15, categoryId: 1, taxable: true, active: true },
+    { name: "Wireless Mouse", sku: "ELC-001", barcode: "8991234567894", description: "Ergonomic wireless mouse", price: "85000", costPrice: "55000", stock: 30, minStock: 5, categoryId: 2, taxable: true, active: true },
+    { name: "USB-C Hub", sku: "ELC-002", barcode: "8991234567895", description: "7-in-1 USB-C hub", price: "150000", costPrice: "95000", stock: 20, minStock: 5, categoryId: 2, taxable: true, active: true },
+    { name: "Bluetooth Speaker", sku: "ELC-003", barcode: "8991234567896", description: "Portable bluetooth speaker", price: "120000", costPrice: "75000", stock: 25, minStock: 5, categoryId: 2, taxable: true, active: true },
+    { name: "T-Shirt Casual", sku: "CLT-001", barcode: "8991234567897", description: "Cotton casual t-shirt", price: "65000", costPrice: "35000", stock: 80, minStock: 20, categoryId: 3, taxable: true, active: true },
+    { name: "Jeans Slim Fit", sku: "CLT-002", barcode: "8991234567898", description: "Slim fit denim jeans", price: "150000", costPrice: "90000", stock: 40, minStock: 10, categoryId: 3, taxable: true, active: true },
+    { name: "Notebook A5", sku: "STN-001", barcode: "8991234567899", description: "Hardcover notebook A5", price: "25000", costPrice: "12000", stock: 100, minStock: 30, categoryId: 4, taxable: true, active: true },
+    { name: "Hand Sanitizer", sku: "HLT-001", barcode: "8991234567900", description: "Alcohol-based hand sanitizer 60ml", price: "15000", costPrice: "8000", stock: 75, minStock: 20, categoryId: 5, taxable: true, active: true },
+    { name: "Face Mask Box", sku: "HLT-002", barcode: "8991234567901", description: "50 pcs disposable face masks", price: "35000", costPrice: "20000", stock: 40, minStock: 10, categoryId: 5, taxable: true, active: true },
   ])
   console.log("Products seeded")
 

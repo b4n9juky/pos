@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
 import { formatCurrency, generateOrderNumber } from "@/lib/format"
 import { useCart } from "@/hooks/use-cart"
+import { useKeyboard } from "@/hooks/use-keyboard"
 import { useSession } from "next-auth/react"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -43,7 +44,8 @@ interface CheckoutModalProps {
 }
 
 export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalProps) {
-  const { items, subtotal, tax, discount, total, taxRate, clearCart } = useCart()
+  const { items, subtotal, taxableSubtotal, tax, discount, total, taxRate, clearCart } = useCart()
+  const nonTaxableSubtotal = subtotal - taxableSubtotal
   const { data: session } = useSession()
   const queryClient = useQueryClient()
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash")
@@ -53,10 +55,23 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
   const [orderResult, setOrderResult] = useState<{ orderNumber: string } | null>(null)
   const [settings, setSettings] = useState<any>(null)
 
+  useKeyboard(
+    [
+      {
+        key: "F8",
+        handler: () => handlePay({ paymentMethod: "cash", amountPaid: total }),
+        ignoreWhenInput: false,
+      },
+    ],
+    open && step === "payment"
+  )
+
   const change = Math.max(0, Number(amountPaid) - total)
   const orderNumber = orderResult?.orderNumber ?? generateOrderNumber()
 
-  const handlePay = async () => {
+  const handlePay = async (overrides?: { paymentMethod?: PaymentMethod; amountPaid?: number }) => {
+    const pm = overrides?.paymentMethod ?? paymentMethod
+    const ap = overrides?.amountPaid ?? Number(amountPaid)
     setSubmitting(true)
     try {
       const res = await fetch("/api/orders", {
@@ -69,7 +84,7 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
           tax,
           discount,
           total,
-          paymentMethod,
+          paymentMethod: pm,
           items: items.map((i) => ({
             productId: i.product.id,
             quantity: i.quantity,
@@ -79,10 +94,17 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
         }),
       })
 
-      if (!res.ok) throw new Error("Failed to create order")
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? `Server error (${res.status})`)
+      }
 
       const result = await res.json()
       setOrderResult(result)
+      if (overrides) {
+        setPaymentMethod(pm)
+        setAmountPaid(String(ap))
+      }
       queryClient.invalidateQueries({ queryKey: ["pos-products"] })
       queryClient.invalidateQueries({ queryKey: ["orders"] })
 
@@ -92,8 +114,10 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
       }
 
       setStep("success")
-    } catch {
-      toast.error("Failed to process payment")
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to process payment"
+      console.error("handlePay error:", e)
+      toast.error(message)
     } finally {
       setSubmitting(false)
     }
@@ -126,6 +150,7 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
                   <div key={item.product.id} className="flex justify-between text-sm">
                     <span className="flex-1 truncate">
                       {item.product.name} x{item.quantity}
+                      {!item.product.taxable && <span className="ml-1 text-[10px] text-muted-foreground">(non-taxable)</span>}
                     </span>
                     <span className="tabular-nums">{formatCurrency(item.product.price * item.quantity)}</span>
                   </div>
@@ -139,6 +164,18 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
                   <span>Subtotal</span>
                   <span className="tabular-nums">{formatCurrency(subtotal)}</span>
                 </div>
+                {nonTaxableSubtotal > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span className="text-xs pl-4">Non-taxable</span>
+                    <span className="tabular-nums text-xs">{formatCurrency(nonTaxableSubtotal)}</span>
+                  </div>
+                )}
+                {taxableSubtotal > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span className="text-xs pl-4">Taxable subtotal</span>
+                    <span className="tabular-nums text-xs">{formatCurrency(taxableSubtotal)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-muted-foreground">
                   <span>Tax ({taxRate}%)</span>
                   <span className="tabular-nums">{formatCurrency(tax)}</span>
@@ -213,7 +250,7 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button onClick={handlePay} disabled={submitting || (paymentMethod === "cash" && Number(amountPaid) < total)}>
+              <Button onClick={() => handlePay()} disabled={submitting || (paymentMethod === "cash" && Number(amountPaid) < total)}>
                 {submitting ? "Processing..." : `Pay ${formatCurrency(total)}`}
               </Button>
             </DialogFooter>
@@ -243,6 +280,7 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
                 quantity: i.quantity,
                 price: i.product.price,
                 subtotal: i.product.price * i.quantity,
+                taxable: i.product.taxable,
               }))}
               subtotal={subtotal}
               tax={tax}

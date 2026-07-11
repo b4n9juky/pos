@@ -31,8 +31,6 @@ export function formatTime(date: string | Date): string {
 export function generateOrderNumber(): string {
   const now = new Date()
   const date = now.toISOString().slice(0, 10).replace(/-/g, "")
-  const random = Math.floor(Math.random() * 999)
-    .toString()
-    .padStart(3, "0")
+  const random = String(Math.floor(Math.random() * 999999)).padStart(6, "0")
   return `INV-${date}-${random}`
 }

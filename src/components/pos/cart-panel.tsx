@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Trash2, Minus, Plus, ShoppingCart, Percent, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,10 +19,19 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-export function CartPanel() {
+interface CartPanelProps {
+  checkoutOpen: boolean
+  onCheckoutOpenChange: (open: boolean) => void
+}
+
+export function CartPanel({ checkoutOpen, onCheckoutOpenChange }: CartPanelProps) {
   const { items, discount, subtotal, tax, total, itemCount, taxRate, updateQuantity, removeItem, setDiscount, clearCart } = useCart()
   const [customerId, setCustomerId] = useState<string>("")
-  const [checkoutOpen, setCheckoutOpen] = useState(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [items.length])
 
   const { data: customers = [] } = useQuery({
     queryKey: ["pos-customers"],
@@ -31,7 +40,7 @@ export function CartPanel() {
 
   return (
     <>
-      <div className="flex w-96 flex-col border-l bg-background">
+      <div className="flex w-96 flex-col border-l bg-background h-full">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <div className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
@@ -117,6 +126,7 @@ export function CartPanel() {
                     </Button>
                   </div>
                 ))}
+                <div ref={scrollRef} />
               </div>
             </ScrollArea>
 
@@ -156,7 +166,7 @@ export function CartPanel() {
               <Button
                 className="w-full h-11 text-base mt-2"
                 size="lg"
-                onClick={() => setCheckoutOpen(true)}
+                onClick={() => onCheckoutOpenChange(true)}
               >
                 Checkout ({formatCurrency(total)})
               </Button>
@@ -167,7 +177,7 @@ export function CartPanel() {
 
       <CheckoutModal
         open={checkoutOpen}
-        onOpenChange={setCheckoutOpen}
+        onOpenChange={onCheckoutOpenChange}
         customerId={customerId ? Number(customerId) : null}
       />
     </>

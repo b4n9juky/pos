@@ -33,6 +33,8 @@ export default function NewProductPage() {
   const [stock, setStock] = useState("0")
   const [minStock, setMinStock] = useState("0")
   const [categoryId, setCategoryId] = useState("")
+  const [taxable, setTaxable] = useState(true)
+  const [taxRate, setTaxRate] = useState("")
   const [active, setActive] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -58,6 +60,8 @@ export default function NewProductPage() {
           stock: Number(stock),
           minStock: Number(minStock),
           categoryId: categoryId ? Number(categoryId) : null,
+          taxable,
+          taxRate: taxRate ? Number(taxRate) : null,
           active,
         }),
       })
@@ -140,6 +144,26 @@ export default function NewProductPage() {
                   <Input id="minStock" type="number" value={minStock} onChange={(e) => setMinStock(e.target.value)} />
                 </div>
               </div>
+              <div className="flex items-center gap-2">
+                <Switch id="taxable" checked={taxable} onCheckedChange={setTaxable} />
+                <Label htmlFor="taxable">Taxable</Label>
+              </div>
+              {taxable && (
+                <div className="space-y-2">
+                  <Label htmlFor="taxRate">Custom Tax Rate (%)</Label>
+                  <Input 
+                    id="taxRate" 
+                    type="number" 
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="Leave blank for general tax"
+                    value={taxRate} 
+                    onChange={(e) => setTaxRate(e.target.value)} 
+                  />
+                  <p className="text-xs text-muted-foreground">If left blank, the general tax rate from settings will be used.</p>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Switch id="active" checked={active} onCheckedChange={setActive} />
                 <Label htmlFor="active">Active</Label>

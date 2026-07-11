@@ -1,15 +1,16 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Plus, Search, Package, Edit, MoreHorizontal, EyeOff } from "lucide-react"
+import { Plus, Search, Package, Edit, MoreHorizontal, EyeOff, ChevronLeft, ChevronRight, Upload } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/format"
+import { ImportModal } from "@/components/import-modal"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -31,17 +32,27 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+const PAGE_SIZE = 50
+
 export default function ProductsPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState("")
+  const [importOpen, setImportOpen] = useState(false)
   const debouncedSearch = useDebounce(search, 200)
+  const [page, setPage] = useState(0)
 
-  const { data: products = [], isLoading } = useQuery({
-    queryKey: ["products", debouncedSearch],
+  const offset = page * PAGE_SIZE
+  const limit = PAGE_SIZE + 1
+
+  const { data: rawProducts = [], isLoading } = useQuery({
+    queryKey: ["products", debouncedSearch, page],
     queryFn: () =>
-      fetch(`/api/products${debouncedSearch ? `?search=${debouncedSearch}` : ""}`).then((r) => r.json()),
+      fetch(`/api/products?limit=${limit}&offset=${offset}${debouncedSearch ? `&search=${debouncedSearch}` : ""}`).then((r) => r.json()),
   })
+
+  const hasMore = rawProducts.length > PAGE_SIZE
+  const products = hasMore ? rawProducts.slice(0, PAGE_SIZE) : rawProducts
 
   return (
     <DashboardShell title="Products">
@@ -52,14 +63,23 @@ export default function ProductsPage() {
             <Input
               placeholder="Search products..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setPage(0)
+              }}
               className="pl-8"
             />
           </div>
-          <Link href="/products/new" className={cn(buttonVariants({ variant: "default" }))}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Product
-          </Link>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import
+            </Button>
+            <Link href="/products/new" className={cn(buttonVariants({ variant: "default" }))}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Product
+            </Link>
+          </div>
         </div>
 
         <div className="rounded-lg border">
@@ -158,7 +178,35 @@ export default function ProductsPage() {
             </TableBody>
           </Table>
         </div>
+
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Page {page + 1}
+            {products.length > 0 && (
+              <span className="ml-1">({offset + 1}–{offset + products.length})</span>
+            )}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={!hasMore}>
+              Next
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
+
+      <ImportModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="Products"
+        templateUrl="/api/products/template"
+        importUrl="/api/products/import"
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["products"] })}
+      />
     </DashboardShell>
   )
 }

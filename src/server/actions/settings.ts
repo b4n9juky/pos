@@ -5,6 +5,7 @@ import { storeSettings } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { auth } from "@/lib/auth"
 
 const settingsSchema = z.object({
   storeName: z.string().min(1).max(255),
@@ -22,6 +23,8 @@ export async function getSettings() {
 }
 
 export async function upsertSettings(data: z.infer<typeof settingsSchema>) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== "admin") throw new Error("Unauthorized")
   const parsed = settingsSchema.parse(data)
   const existing = await db.select({ id: storeSettings.id }).from(storeSettings).limit(1).then((r) => r[0])
 

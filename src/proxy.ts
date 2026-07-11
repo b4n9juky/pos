@@ -1,25 +1,50 @@
-import { auth } from "@/lib/auth"
 import { NextResponse } from "next/server"
+import { auth } from "@/lib/auth"
+
+const publicPaths = ["/login", "/api/auth"]
+const adminOnlyPaths = ["/settings", "/api/users", "/api/settings", "/api/tax-settings"]
 
 export default auth((req) => {
   const { pathname } = req.nextUrl
-  const isLoggedIn = !!req.auth
 
-  const publicPaths = ["/login", "/api/auth"]
-
-  const isPublic = publicPaths.some((p) => pathname.startsWith(p))
-
-  if (!isLoggedIn && !isPublic) {
-    return NextResponse.redirect(new URL("/login", req.url))
+  if (publicPaths.some((p) => pathname.startsWith(p))) {
+    return
   }
 
-  if (isLoggedIn && pathname === "/login") {
-    return NextResponse.redirect(new URL("/pos", req.url))
+  if (pathname === "/") {
+    return
   }
 
-  return NextResponse.next()
+  if (!req.auth) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    const loginUrl = new URL("/login", req.url)
+    loginUrl.searchParams.set("callbackUrl", pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  if (adminOnlyPaths.some((p) => pathname.startsWith(p))) {
+    if (req.auth.user?.role !== "admin") {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+      return NextResponse.redirect(new URL("/pos", req.url))
+    }
+  }
 })
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/login",
+    "/pos/:path*",
+    "/products/:path*",
+    "/categories/:path*",
+    "/customers/:path*",
+    "/orders/:path*",
+    "/reports/:path*",
+    "/register/:path*",
+    "/settings/:path*",
+    "/api/:path*",
+  ],
 }

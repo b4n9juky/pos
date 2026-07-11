@@ -5,6 +5,7 @@ import { taxSettings } from "@/db/schema"
 import { eq, and } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { auth } from "@/lib/auth"
 
 const taxSettingSchema = z.object({
   name: z.string().min(1).max(255),
@@ -30,6 +31,8 @@ export async function getDefaultTaxRate() {
 }
 
 export async function upsertTaxSetting(data: z.infer<typeof taxSettingSchema>) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== "admin") throw new Error("Unauthorized")
   const parsed = taxSettingSchema.parse(data)
 
   if (parsed.isDefault) {
@@ -48,6 +51,8 @@ export async function upsertTaxSetting(data: z.infer<typeof taxSettingSchema>) {
 }
 
 export async function deleteTaxSetting(id: number) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== "admin") throw new Error("Unauthorized")
   await db.update(taxSettings).set({ active: false }).where(eq(taxSettings.id, id))
   revalidatePath("/settings")
 }

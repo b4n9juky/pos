@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Plus, Search, Users, Edit } from "lucide-react"
+import { Plus, Search, Users, Edit, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -31,10 +31,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 
+const PAGE_SIZE = 50
+
 export default function CustomersPage() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 200)
+  const [page, setPage] = useState(0)
   const [editDialog, setEditDialog] = useState(false)
   const [editCustomer, setEditCustomer] = useState<any>(null)
   const [editName, setEditName] = useState("")
@@ -43,11 +46,17 @@ export default function CustomersPage() {
   const [editAddress, setEditAddress] = useState("")
   const [saving, setSaving] = useState(false)
 
-  const { data: customers = [], isLoading } = useQuery({
-    queryKey: ["customers", debouncedSearch],
+  const offset = page * PAGE_SIZE
+  const limit = PAGE_SIZE + 1
+
+  const { data: rawCustomers = [], isLoading } = useQuery({
+    queryKey: ["customers", debouncedSearch, page],
     queryFn: () =>
-      fetch(`/api/customers${debouncedSearch ? `?search=${debouncedSearch}` : ""}`).then((r) => r.json()),
+      fetch(`/api/customers?limit=${limit}&offset=${offset}${debouncedSearch ? `&search=${debouncedSearch}` : ""}`).then((r) => r.json()),
   })
+
+  const hasMore = rawCustomers.length > PAGE_SIZE
+  const customers = hasMore ? rawCustomers.slice(0, PAGE_SIZE) : rawCustomers
 
   const openEdit = (customer: any) => {
     setEditCustomer(customer)
@@ -92,7 +101,10 @@ export default function CustomersPage() {
             <Input
               placeholder="Search customers..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setPage(0)
+              }}
               className="pl-8"
             />
           </div>
@@ -154,6 +166,25 @@ export default function CustomersPage() {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Page {page + 1}
+            {customers.length > 0 && (
+              <span className="ml-1">({offset + 1}–{offset + customers.length})</span>
+            )}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={!hasMore}>
+              Next
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 

@@ -12,6 +12,7 @@ interface ReceiptItem {
   quantity: number
   price: number
   subtotal: number
+  taxable?: boolean
 }
 
 interface ReceiptPDFProps {
@@ -95,7 +96,7 @@ export function ReceiptPDF({
       if (!content) return
 
       const canvas = await html2canvas(content, {
-        scale: 2,
+        scale: 1,
         useCORS: true,
         logging: false,
       })
@@ -151,7 +152,7 @@ export function ReceiptPDF({
           <tbody>
             {items.map((item, i) => (
               <tr key={i}>
-                <td>{item.name}</td>
+                <td>{item.name}{item.taxable === false ? <span className="ml-1">(NT)</span> : ""}</td>
                 <td className="text-right">{item.quantity}</td>
                 <td className="text-right">{formatCurrency(item.price)}</td>
                 <td className="text-right">{formatCurrency(item.subtotal)}</td>

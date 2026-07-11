@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useReducer, useCallback, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useReducer, useCallback, useMemo, useState, useEffect, type ReactNode } from "react"
 import type { CartItem, Product } from "@/types"
 
 interface CartState {
@@ -57,6 +57,7 @@ interface CartContextValue {
   items: CartItem[]
   discount: number
   subtotal: number
+  taxableSubtotal: number
   tax: number
   total: number
   itemCount: number
@@ -83,10 +84,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
       .catch(() => {})
   }, [])
 
-  const subtotal = state.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
-  const tax = Math.round(subtotal * (taxRate / 100))
-  const total = Math.max(0, subtotal + tax - state.discount)
-  const itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0)
+  const subtotal = useMemo(
+    () => state.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
+    [state.items]
+  )
+  const taxableSubtotal = useMemo(
+    () => state.items.reduce((sum, item) => sum + (item.product.taxable ? item.product.price * item.quantity : 0), 0),
+    [state.items]
+  )
+  const tax = useMemo(() => {
+    return Math.round(state.items.reduce((sum, item) => {
+      if (!item.product.taxable) return sum;
+      const rate = item.product.taxRate != null ? item.product.taxRate : taxRate;
+      return sum + (item.product.price * item.quantity * (rate / 100));
+    }, 0))
+  }, [state.items, taxRate])
+  const total = useMemo(() => Math.max(0, subtotal + tax - state.discount), [subtotal, tax, state.discount])
+  const itemCount = useMemo(() => state.items.reduce((sum, item) => sum + item.quantity, 0), [state.items])
 
   const addItem = useCallback((product: Product) => {
     dispatch({ type: "ADD_ITEM", product })
@@ -108,23 +122,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "CLEAR_CART" })
   }, [])
 
+  const contextValue = useMemo(
+    () => ({
+      items: state.items,
+      discount: state.discount,
+      subtotal,
+      taxableSubtotal,
+      tax,
+      total,
+      itemCount,
+      taxRate,
+      addItem,
+      removeItem,
+      updateQuantity,
+      setDiscount,
+      clearCart,
+    }),
+    [state.items, state.discount, subtotal, taxableSubtotal, tax, total, itemCount, taxRate]
+  )
+
   return (
-    <CartContext.Provider
-      value={{
-        items: state.items,
-        discount: state.discount,
-        subtotal,
-        tax,
-        total,
-        itemCount,
-        taxRate,
-        addItem,
-        removeItem,
-        updateQuantity,
-        setDiscount,
-        clearCart,
-      }}
-    >
+    <CartContext.Provider value={contextValue}>
       {children}
     </CartContext.Provider>
   )

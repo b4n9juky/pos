@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useState } from "react"
+import { use, useState, useEffect } from "react"
 import Link from "next/link"
 import { ArrowLeft, Printer } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { formatCurrency, formatDate } from "@/lib/format"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useQuery } from "@tanstack/react-query"
 import { InvoicePDF } from "@/components/pos/invoice-pdf"
 import {
@@ -32,6 +34,8 @@ import { notFound } from "next/navigation"
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [receiptOpen, setReceiptOpen] = useState(false)
+  const [invoiceDate, setInvoiceDate] = useState("")
+  const [invoiceTotal, setInvoiceTotal] = useState(0)
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["order", id],
@@ -56,6 +60,19 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     queryFn: () => fetch(`/api/customers/${order.customerId}`).then((r) => r.json()),
     enabled: !!order?.customerId,
   })
+
+  useEffect(() => {
+    if (order?.createdAt) {
+      const d = new Date(order.createdAt)
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, "0")
+      const day = String(d.getDate()).padStart(2, "0")
+      setInvoiceDate(`${y}-${m}-${day}`)
+    }
+    if (order?.total != null) {
+      setInvoiceTotal(Number(order.total))
+    }
+  }, [order?.createdAt, order?.total])
 
   if (isLoading) {
     return (
@@ -191,24 +208,48 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <DialogTitle>Invoice</DialogTitle>
             <DialogDescription>Print or download the invoice as PDF</DialogDescription>
           </DialogHeader>
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <Label htmlFor="invoice-date">Invoice Date</Label>
+            <Input
+              id="invoice-date"
+              type="date"
+              className="w-fit"
+              value={invoiceDate}
+              onChange={(e) => setInvoiceDate(e.target.value)}
+            />
+            <Label htmlFor="invoice-total">Total Amount</Label>
+            <Input
+              id="invoice-total"
+              type="number"
+              className="w-40"
+              value={invoiceTotal}
+              onChange={(e) => setInvoiceTotal(Number(e.target.value))}
+            />
+            {Number(invoiceTotal) !== Number(order.total) && (
+              <span className="text-xs text-muted-foreground">
+                (original: {formatCurrency(Number(order.total))})
+              </span>
+            )}
+          </div>
           <InvoicePDF
             orderNumber={order.orderNumber}
             status={order.status}
-            createdAt={order.createdAt}
+            createdAt={invoiceDate || order.createdAt}
             items={order.items.map((i: any) => ({
               name: i.productName,
               quantity: i.quantity,
               unitPrice: Number(i.unitPrice),
               subtotal: Number(i.subtotal),
+              taxable: i.taxable,
             }))}
             subtotal={Number(order.subtotal)}
             tax={Number(order.tax)}
             taxName={taxData?.name}
             taxRate={taxData?.rate}
             discount={Number(order.discount)}
-            total={Number(order.total)}
+            total={invoiceTotal}
             paymentMethod={order.paymentMethod}
-            amountPaid={Number(order.total)}
+            amountPaid={invoiceTotal}
             change={0}
             paymentReference={order.orderNumber}
             storeName={settings?.storeName}

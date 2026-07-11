@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useRef, type RefObject } from "react"
 import { Search, Package } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,13 @@ import type { Product } from "@/types"
 import { useCart } from "@/hooks/use-cart"
 import { useDebounce } from "@/hooks/use-debounce"
 
-export function ProductGrid() {
+interface ProductGridProps {
+  compact?: boolean
+  searchInputRef?: RefObject<HTMLInputElement | null>
+  onFilteredProducts?: (products: Product[]) => void
+}
+
+export function ProductGrid({ compact, searchInputRef, onFilteredProducts }: ProductGridProps) {
   const [search, setSearch] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const debouncedSearch = useDebounce(search, 200)
@@ -46,6 +52,14 @@ export function ProductGrid() {
     return result
   }, [debouncedSearch, selectedCategory, products])
 
+  const filteredKey = useMemo(() => (filtered as Product[]).map(p => p.id).join(","), [filtered])
+  const onFilteredProductsRef = useRef(onFilteredProducts)
+  onFilteredProductsRef.current = onFilteredProducts
+
+  useEffect(() => {
+    onFilteredProductsRef.current?.(filtered)
+  }, [filteredKey])
+
   const handleAdd = (product: any) => {
     if (product.stock <= 0) return
     addItem(product as Product)
@@ -57,6 +71,7 @@ export function ProductGrid() {
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
+            ref={searchInputRef as any}
             placeholder="Search by name, SKU, or barcode..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -87,19 +102,19 @@ export function ProductGrid() {
         </div>
       </div>
       <ScrollArea className="flex-1">
-        <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className={cn("grid gap-3 p-4", compact ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5")}>
           {filtered.map((product: any) => (
             <button
               key={product.id}
               onClick={() => handleAdd(product)}
               disabled={product.stock <= 0}
               className={cn(
-                "flex flex-col items-center justify-center rounded-xl border p-4 text-center transition-all hover:border-primary hover:shadow-md active:scale-95",
+                "group flex flex-col items-center justify-center rounded-xl border p-3 text-center hover:border-primary hover:shadow-md",
                 product.stock <= 0 && "cursor-not-allowed opacity-50"
               )}
             >
-              <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                <Package className="h-8 w-8 text-muted-foreground" />
+              <div className="mb-2 flex h-20 w-20 items-center justify-center rounded-xl bg-muted">
+                <Package className="h-10 w-10 text-muted-foreground/40" />
               </div>
               <p className="line-clamp-2 text-sm font-medium leading-tight">{product.name}</p>
               <p className="mt-1 text-sm font-bold text-primary">{formatCurrency(Number(product.price))}</p>
@@ -107,7 +122,7 @@ export function ProductGrid() {
                 variant={product.stock <= product.minStock ? "destructive" : "secondary"}
                 className="mt-1 text-[10px]"
               >
-                Stock: {product.stock}
+                {product.stock} left
               </Badge>
             </button>
           ))}

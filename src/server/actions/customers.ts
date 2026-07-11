@@ -13,21 +13,19 @@ const customerSchema = z.object({
   address: z.string().nullable(),
 })
 
-export async function getCustomers(search?: string) {
+export async function getCustomers(search?: string, limit = 50, offset = 0) {
+  const base = db.select().from(customers)
   if (search) {
     const q = `%${search}%`
-    return db
-      .select()
-      .from(customers)
-      .where(
-        or(
-          like(customers.name, q),
-          like(customers.email, q),
-          like(customers.phone, q)
-        )
+    return base.where(
+      or(
+        like(customers.name, q),
+        like(customers.email, q),
+        like(customers.phone, q)
       )
+    ).limit(limit).offset(offset)
   }
-  return db.select().from(customers)
+  return base.limit(limit).offset(offset)
 }
 
 export async function getCustomer(id: number) {

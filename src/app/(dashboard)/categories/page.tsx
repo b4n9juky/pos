@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, FolderTree, Edit } from "lucide-react"
+import { Plus, FolderTree, Edit, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -25,10 +25,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { ImportModal } from "@/components/import-modal"
 
 export default function CategoriesPage() {
   const queryClient = useQueryClient()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [editCat, setEditCat] = useState<any>(null)
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
@@ -86,7 +88,11 @@ export default function CategoriesPage() {
   return (
     <DashboardShell title="Categories">
       <div className="space-y-4">
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
           <Button onClick={openNew}>
             <Plus className="mr-2 h-4 w-4" />
             Add Category
@@ -141,6 +147,15 @@ export default function CategoriesPage() {
           </Table>
         </div>
       </div>
+
+      <ImportModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="Categories"
+        templateUrl="/api/categories/template"
+        importUrl="/api/categories/import"
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["categories"] })}
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

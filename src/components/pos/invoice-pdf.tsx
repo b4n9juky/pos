@@ -12,6 +12,7 @@ interface InvoiceItem {
   quantity: number
   unitPrice: number
   subtotal: number
+  taxable?: boolean
 }
 
 interface InvoicePDFProps {
@@ -116,7 +117,8 @@ export function InvoicePDF({
   }, [])
 
   const issueDate = createdAt ? formatDate(createdAt) : formatDate(new Date())
-  const due = dueDate || new Date(Date.now() + 14 * 86400000)
+  const baseDate = createdAt ? new Date(createdAt) : new Date()
+  const due = dueDate || new Date(baseDate.getTime() + 14 * 86400000)
   const dueDateStr = formatDate(due)
   const ref = paymentReference || orderNumber
 
@@ -185,7 +187,7 @@ export function InvoicePDF({
       if (!content) return
 
       const canvas = await html2canvas(content, {
-        scale: 2,
+        scale: 1,
         useCORS: true,
         logging: false,
       })
@@ -424,15 +426,20 @@ export function InvoicePDF({
             </thead>
             <tbody>
               {items.map((item, i) => (
-                <tr key={i} style={i % 2 === 0 ? { background: "#f8fafc", borderBottom: "1px solid #c6c6cd" } : { borderBottom: "1px solid #c6c6cd" }}>
-                  <td style={{ padding: "24px 16px 24px 0" }}>
-                    <div style={{ fontWeight: 700, color: "#191c1e" }}>{item.name}</div>
-                    {item.description && (
-                      <div style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 14, lineHeight: "20px", color: "#45464d" }}>
-                        {item.description}
+                  <tr key={i} style={i % 2 === 0 ? { background: "#f8fafc", borderBottom: "1px solid #c6c6cd" } : { borderBottom: "1px solid #c6c6cd" }}>
+                    <td style={{ padding: "24px 16px 24px 0" }}>
+                      <div style={{ fontWeight: 700, color: "#191c1e" }}>
+                        {item.name}
+                        {item.taxable === false && (
+                          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "#76777d", marginLeft: 8 }}>(Non-taxable)</span>
+                        )}
                       </div>
-                    )}
-                  </td>
+                      {item.description && (
+                        <div style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 14, lineHeight: "20px", color: "#45464d" }}>
+                          {item.description}
+                        </div>
+                      )}
+                    </td>
                   <td style={{ padding: "24px 16px 24px 0", textAlign: "center", color: "#191c1e" }}>{item.quantity}</td>
                   <td style={{ padding: "24px 16px 24px 0", textAlign: "right", fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", fontWeight: 500, color: "#191c1e" }}>
                     {formatCurrency(item.unitPrice)}

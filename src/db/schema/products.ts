@@ -13,6 +13,8 @@ export const products = mysqlTable("products", {
   minStock: int("min_stock").notNull().default(5),
   categoryId: int("category_id").references(() => categories.id, { onDelete: "set null" }),
   image: varchar("image", { length: 500 }),
+  taxable: boolean("taxable").notNull().default(true),
+  taxRate: decimal("tax_rate", { precision: 5, scale: 2 }),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

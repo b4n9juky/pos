@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Eye } from "lucide-react"
+import { Search, Eye, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
@@ -19,6 +19,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+const PAGE_SIZE = 50
+
 const statusBadge: Record<string, "default" | "secondary" | "destructive"> = {
   completed: "default",
   cancelled: "destructive",
@@ -29,12 +31,22 @@ export default function OrdersPage() {
   const router = useRouter()
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 200)
+  const [page, setPage] = useState(0)
 
-  const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["orders", debouncedSearch],
+  const offset = page * PAGE_SIZE
+  const limit = PAGE_SIZE + 1
+
+  const { data: rawOrders = [], isLoading } = useQuery({
+    queryKey: ["orders", debouncedSearch, page],
     queryFn: () =>
-      fetch(`/api/orders${debouncedSearch ? `?search=${debouncedSearch}` : ""}`).then((r) => r.json()),
+      fetch(`/api/orders?limit=${limit}&offset=${offset}${debouncedSearch ? `&search=${debouncedSearch}` : ""}`).then((r) => r.json()),
   })
+
+  const hasMore = rawOrders.length > PAGE_SIZE
+  const orders = hasMore ? rawOrders.slice(0, PAGE_SIZE) : rawOrders
+
+  const goNext = () => setPage((p) => p + 1)
+  const goPrev = () => setPage((p) => Math.max(0, p - 1))
 
   return (
     <DashboardShell title="Orders">
@@ -44,7 +56,10 @@ export default function OrdersPage() {
           <Input
             placeholder="Search by order number or customer..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(0)
+            }}
             className="pl-8"
           />
         </div>
@@ -106,6 +121,25 @@ export default function OrdersPage() {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Page {page + 1}
+            {orders.length > 0 && (
+              <span className="ml-1">({offset + 1}–{offset + orders.length})</span>
+            )}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={goPrev} disabled={page === 0}>
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" onClick={goNext} disabled={!hasMore}>
+              Next
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </DashboardShell>

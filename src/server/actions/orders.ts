@@ -5,6 +5,7 @@ import { orders, orderItems, products, customers, users } from "@/db/schema"
 import { eq, desc, like, or, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { randomInt } from "node:crypto"
 
 const orderItemSchema = z.object({
   productId: z.number(),
@@ -48,14 +49,16 @@ function getOrdersBaseQuery() {
     .leftJoin(users, eq(orders.userId, users.id))
 }
 
-export async function getOrders(search?: string) {
+export async function getOrders(search?: string, limit = 50, offset = 0) {
+  const base = getOrdersBaseQuery().orderBy(desc(orders.createdAt))
   if (search) {
     const q = `%${search}%`
-    return getOrdersBaseQuery()
+    return base
       .where(or(like(orders.orderNumber, q), like(customers.name, q)))
-      .orderBy(desc(orders.createdAt))
+      .limit(limit)
+      .offset(offset)
   }
-  return getOrdersBaseQuery().orderBy(desc(orders.createdAt))
+  return base.limit(limit).offset(offset)
 }
 
 export async function getOrder(id: number) {
@@ -74,6 +77,7 @@ export async function getOrder(id: number) {
       quantity: orderItems.quantity,
       unitPrice: orderItems.unitPrice,
       subtotal: orderItems.subtotal,
+      taxable: products.taxable,
     })
     .from(orderItems)
     .leftJoin(products, eq(orderItems.productId, products.id))
@@ -86,7 +90,7 @@ export async function createOrder(data: z.infer<typeof createOrderSchema>) {
   const parsed = createOrderSchema.parse(data)
   const now = new Date()
   const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "")
-  const random = Math.floor(Math.random() * 999).toString().padStart(3, "0")
+  const random = String(randomInt(0, 999999)).padStart(6, "0")
   const orderNumber = `INV-${dateStr}-${random}`
 
   const result = await db.insert(orders).values({
@@ -104,20 +108,24 @@ export async function createOrder(data: z.infer<typeof createOrderSchema>) {
 
   const orderId = Number(result[0].insertId)
 
-  for (const item of parsed.items) {
-    await db.insert(orderItems).values({
+  await db.insert(orderItems).values(
+    parsed.items.map((item) => ({
       orderId,
       productId: item.productId,
       quantity: item.quantity,
       unitPrice: String(item.unitPrice),
       subtotal: String(item.subtotal),
-    })
+    }))
+  )
 
-    await db
-      .update(products)
-      .set({ stock: sql`stock - ${item.quantity}` })
-      .where(eq(products.id, item.productId))
-  }
+  await Promise.all(
+    parsed.items.map((item) =>
+      db
+        .update(products)
+        .set({ stock: sql`stock - ${item.quantity}` })
+        .where(eq(products.id, item.productId))
+    )
+  )
 
   revalidatePath("/orders")
   revalidatePath("/products")

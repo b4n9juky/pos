@@ -6,6 +6,7 @@ import { eq, count, and } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { hash } from "bcryptjs"
 import { z } from "zod"
+import { auth } from "@/lib/auth"
 
 const createUserSchema = z.object({
   name: z.string().min(1).max(255),
@@ -54,6 +55,8 @@ export async function getUser(id: number) {
 }
 
 export async function createUser(data: z.infer<typeof createUserSchema>) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== "admin") throw new Error("Unauthorized")
   const parsed = createUserSchema.parse(data)
   const passwordHash = await hash(parsed.password, 10)
   await db.insert(users).values({
@@ -67,6 +70,8 @@ export async function createUser(data: z.infer<typeof createUserSchema>) {
 }
 
 export async function updateUser(id: number, data: z.infer<typeof updateUserSchema>) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== "admin") throw new Error("Unauthorized")
   const parsed = updateUserSchema.parse(data)
   const updateData: Record<string, any> = {}
   if (parsed.name !== undefined) updateData.name = parsed.name
@@ -83,6 +88,8 @@ export async function updateUser(id: number, data: z.infer<typeof updateUserSche
 }
 
 export async function toggleUserActive(id: number) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== "admin") throw new Error("Unauthorized")
   const user = await db.select().from(users).where(eq(users.id, id)).then((r) => r[0])
   if (!user) throw new Error("User not found")
 

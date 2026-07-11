@@ -16,6 +16,8 @@ const productSchema = z.object({
   stock: z.number().int().min(0),
   minStock: z.number().int().min(0),
   categoryId: z.number().int().nullable(),
+  taxable: z.boolean(),
+  taxRate: z.number().min(0).max(100).nullable().optional(),
   active: z.boolean(),
 })
 
@@ -34,6 +36,8 @@ function getProductBaseQuery() {
       categoryId: products.categoryId,
       categoryName: categories.name,
       image: products.image,
+      taxable: products.taxable,
+      taxRate: products.taxRate,
       active: products.active,
       createdAt: products.createdAt,
     })
@@ -41,14 +45,15 @@ function getProductBaseQuery() {
     .leftJoin(categories, eq(products.categoryId, categories.id))
 }
 
-export async function getProducts(search?: string) {
+export async function getProducts(search?: string, limit = 50, offset = 0) {
+  const base = getProductBaseQuery()
   if (search) {
     const q = `%${search}%`
-    return getProductBaseQuery().where(
+    return base.where(
       or(like(products.name, q), like(products.sku, q), like(products.barcode, q))
-    )
+    ).limit(limit).offset(offset)
   }
-  return getProductBaseQuery()
+  return base.limit(limit).offset(offset)
 }
 
 export async function getProduct(id: number) {
@@ -61,6 +66,7 @@ export async function createProduct(data: z.infer<typeof productSchema>) {
     ...parsed,
     price: String(parsed.price),
     costPrice: parsed.costPrice ? String(parsed.costPrice) : null,
+    taxRate: parsed.taxRate != null ? String(parsed.taxRate) : null,
   })
   revalidatePath("/products")
 }
@@ -73,6 +79,7 @@ export async function updateProduct(id: number, data: z.infer<typeof productSche
       ...parsed,
       price: String(parsed.price),
       costPrice: parsed.costPrice ? String(parsed.costPrice) : null,
+      taxRate: parsed.taxRate != null ? String(parsed.taxRate) : null,
     })
     .where(eq(products.id, id))
   revalidatePath("/products")

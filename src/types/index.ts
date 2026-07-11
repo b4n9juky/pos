@@ -29,6 +29,8 @@ export interface Product {
   category_id: number | null
   category_name?: string
   image: string | null
+  taxable: boolean
+  taxRate?: number | null
   active: boolean
   created_at: string
 }
