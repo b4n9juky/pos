@@ -3,6 +3,7 @@
 import { db } from "@/db"
 import { products, categories } from "@/db/schema"
 import { revalidatePath } from "next/cache"
+import { auth } from "@/lib/auth"
 
 interface ImportRowError {
   row: number
@@ -35,6 +36,8 @@ function parseString(val: unknown): string | null {
 }
 
 export async function importProducts(rows: Record<string, unknown>[]): Promise<ImportResult> {
+  const session = await auth()
+  if (session?.user?.role !== "admin") throw new Error("Unauthorized")
   const result: ImportResult = { success: 0, failed: 0, errors: [] }
 
   const allCategories = await db.select().from(categories)
@@ -120,6 +123,8 @@ export async function importProducts(rows: Record<string, unknown>[]): Promise<I
 }
 
 export async function importCategories(rows: Record<string, unknown>[]): Promise<ImportResult> {
+  const session = await auth()
+  if (session?.user?.role !== "admin") throw new Error("Unauthorized")
   const result: ImportResult = { success: 0, failed: 0, errors: [] }
 
   const existingSlugs = new Set<string>()

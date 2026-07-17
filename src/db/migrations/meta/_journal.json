@@ -15,6 +15,20 @@
       "when": 1782086514474,
       "tag": "0001_bumpy_zaran",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1783931522289,
+      "tag": "0002_nappy_brood",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1784245281419,
+      "tag": "0003_icy_ender_wiggin",
+      "breakpoints": true
     }
   ]
 }

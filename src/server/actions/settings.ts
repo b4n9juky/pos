@@ -15,6 +15,7 @@ const settingsSchema = z.object({
   taxRate: z.number().min(0).max(100),
   currency: z.string().max(10),
   receiptFooter: z.string().nullable(),
+  autoPrint: z.boolean().optional().default(true),
 })
 
 export async function getSettings() {

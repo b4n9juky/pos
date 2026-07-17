@@ -5,6 +5,7 @@ import { Download, Printer } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatCurrency, formatDate } from "@/lib/format"
 import { toast } from "sonner"
+import { t } from "@/lib/translate"
 
 interface InvoiceItem {
   name: string
@@ -52,7 +53,7 @@ function StatusBadge({ status }: { status: string }) {
   const cls = colors[status.toLowerCase()] ?? "bg-gray-100 text-gray-600"
   return (
     <span className={`inline-flex items-center px-2 py-1 rounded-sm font-mono text-[10px] uppercase tracking-wider ${cls}`}>
-      {status}
+      {t(status)}
     </span>
   )
 }
@@ -65,7 +66,7 @@ export function InvoicePDF({
   items,
   subtotal,
   tax,
-  taxName = "Tax",
+  taxName = t("Tax"),
   taxRate,
   discount,
   total,
@@ -73,7 +74,7 @@ export function InvoicePDF({
   amountPaid,
   change,
   paymentReference,
-  storeName = "Your Store",
+  storeName = t("Your Store"),
   storeAddress,
   storePhone,
   storeEmail,
@@ -197,9 +198,9 @@ export function InvoicePDF({
       const pdfH = (canvas.height * pdfW) / canvas.width
       pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH)
       pdf.save(`invoice-${orderNumber}.pdf`)
-      toast.success("Invoice PDF downloaded")
+      toast.success(t("Invoice PDF downloaded"))
     } catch {
-      toast.error("Failed to generate PDF")
+      toast.error(t("Failed to generate PDF"))
     } finally {
       setPdfLoading(false)
     }
@@ -210,11 +211,11 @@ export function InvoicePDF({
       <div className="flex gap-2 justify-end no-print">
         <Button variant="outline" size="sm" onClick={handlePrint}>
           <Printer className="mr-2 h-4 w-4" />
-          Print
+          {t("Print")}
         </Button>
         <Button variant="outline" size="sm" onClick={handleDownloadPDF} disabled={pdfLoading}>
           <Download className="mr-2 h-4 w-4" />
-          {pdfLoading ? "Generating..." : "PDF"}
+          {pdfLoading ? t("Generating...") : t("PDF")}
         </Button>
       </div>
 
@@ -246,7 +247,7 @@ export function InvoicePDF({
               color: "#000",
               margin: 0,
             }}>
-              Invoice
+              {t("Invoice")}
             </h1>
             <p style={{
               fontFamily: "'JetBrains Mono', monospace",
@@ -294,7 +295,7 @@ export function InvoicePDF({
         }}>
           <div>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", letterSpacing: "0.05em", fontWeight: 500, textTransform: "uppercase", color: "#76777d", marginBottom: 4 }}>
-              Invoice Number
+              {t("Invoice Number")}
             </div>
             <div style={{ fontFamily: "'Hanken Grotesk', sans-serif", fontSize: 20, lineHeight: "28px", fontWeight: 600, color: "#000" }}>
               {orderNumber}
@@ -302,7 +303,7 @@ export function InvoicePDF({
           </div>
           <div>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", letterSpacing: "0.05em", fontWeight: 500, textTransform: "uppercase", color: "#76777d", marginBottom: 4 }}>
-              Issue Date
+              {t("Issue Date")}
             </div>
             <div style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 16, lineHeight: "24px", fontWeight: 500, color: "#191c1e" }}>
               {issueDate}
@@ -310,7 +311,7 @@ export function InvoicePDF({
           </div>
           <div>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", letterSpacing: "0.05em", fontWeight: 500, textTransform: "uppercase", color: "#76777d", marginBottom: 4 }}>
-              Due Date
+              {t("Due Date")}
             </div>
             <div style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 16, lineHeight: "24px", fontWeight: 500, color: "#191c1e" }}>
               {dueDateStr}
@@ -318,7 +319,7 @@ export function InvoicePDF({
           </div>
           <div>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", letterSpacing: "0.05em", fontWeight: 500, textTransform: "uppercase", color: "#76777d", marginBottom: 4 }}>
-              Status
+              {t("Status")}
             </div>
             <StatusBadge status={status} />
           </div>
@@ -339,7 +340,7 @@ export function InvoicePDF({
               borderBottom: "1px solid #c6c6cd",
               marginBottom: 16,
             }}>
-              Bill To
+              {t("Bill To")}
             </h3>
             <div style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 16, lineHeight: "24px" }}>
               {customerName ? (
@@ -349,7 +350,7 @@ export function InvoicePDF({
                   {customerEmail && <p style={{ color: "#45464d", marginTop: 8, textDecoration: "underline" }}>{customerEmail}</p>}
                 </>
               ) : (
-                <p style={{ color: "#45464d", margin: 0 }}>Walk-in Customer</p>
+                <p style={{ color: "#45464d", margin: 0 }}>{t("Walk-in Customer")}</p>
               )}
             </div>
           </div>
@@ -370,24 +371,24 @@ export function InvoicePDF({
               borderBottom: "1px solid #c6c6cd",
               marginBottom: 16,
             }}>
-              Payment
+              {t("Payment")}
             </h3>
             <div style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 14, lineHeight: "20px", color: "#45464d" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                <span>Method:</span>
+                <span>{t("Method:")}</span>
                 <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", fontWeight: 500, color: "#191c1e", textTransform: "capitalize" }}>
-                  {paymentMethod}
+                  {t(paymentMethod)}
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                <span>Reference:</span>
+                <span>{t("Reference:")}</span>
                 <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", fontWeight: 500, color: "#191c1e" }}>
                   {ref}
                 </span>
               </div>
               {amountPaid != null && (
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                  <span>Amount Paid:</span>
+                  <span>{t("Amount Paid:")}</span>
                   <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", fontWeight: 500, color: "#191c1e" }}>
                     {formatCurrency(amountPaid)}
                   </span>
@@ -395,7 +396,7 @@ export function InvoicePDF({
               )}
               {change != null && change > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Change:</span>
+                  <span>{t("Change:")}</span>
                   <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", fontWeight: 500, color: "#191c1e" }}>
                     {formatCurrency(change)}
                   </span>
@@ -411,16 +412,16 @@ export function InvoicePDF({
             <thead>
               <tr style={{ borderBottom: "2px solid #000" }}>
                 <th style={{ padding: "16px 16px 16px 0", textAlign: "left", fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", letterSpacing: "0.05em", fontWeight: 500, textTransform: "uppercase", color: "#000" }}>
-                  Description
+                  {t("Description")}
                 </th>
                 <th style={{ padding: "16px 16px 16px 0", width: 96, textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", letterSpacing: "0.05em", fontWeight: 500, textTransform: "uppercase", color: "#000" }}>
-                  Qty
+                  {t("Qty")}
                 </th>
                 <th style={{ padding: "16px 16px 16px 0", width: 128, textAlign: "right", fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", letterSpacing: "0.05em", fontWeight: 500, textTransform: "uppercase", color: "#000" }}>
-                  Unit Price
+                  {t("Unit Price")}
                 </th>
                 <th style={{ padding: "16px 0", width: 128, textAlign: "right", fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", letterSpacing: "0.05em", fontWeight: 500, textTransform: "uppercase", color: "#000" }}>
-                  Total
+                  {t("Total")}
                 </th>
               </tr>
             </thead>
@@ -431,7 +432,7 @@ export function InvoicePDF({
                       <div style={{ fontWeight: 700, color: "#191c1e" }}>
                         {item.name}
                         {item.taxable === false && (
-                          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "#76777d", marginLeft: 8 }}>(Non-taxable)</span>
+                          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "#76777d", marginLeft: 8 }}>{t("(Non-taxable)")}</span>
                         )}
                       </div>
                       {item.description && (
@@ -457,26 +458,26 @@ export function InvoicePDF({
         <div style={{ marginTop: 48, display: "flex", justifyContent: "flex-end" }}>
           <div style={{ width: 320 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "'Work Sans', sans-serif", fontSize: 16, lineHeight: "24px", marginBottom: 12 }}>
-              <span style={{ color: "#45464d" }}>Subtotal</span>
+              <span style={{ color: "#45464d" }}>{t("Subtotal")}</span>
               <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", fontWeight: 500 }}>{formatCurrency(subtotal)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "'Work Sans', sans-serif", fontSize: 16, lineHeight: "24px", marginBottom: 12 }}>
-              <span style={{ color: "#45464d" }}>{taxName}{taxRate != null ? ` (${taxRate}%)` : ""}</span>
+              <span style={{ color: "#45464d" }}>{taxRate != null ? t("Tax ({rate}%)", { rate: taxRate }) : taxName}</span>
               <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", fontWeight: 500 }}>{formatCurrency(tax)}</span>
             </div>
             {discount > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "'Work Sans', sans-serif", fontSize: 16, lineHeight: "24px", marginBottom: 12 }}>
-                <span style={{ color: "#45464d" }}>Discount</span>
+                <span style={{ color: "#45464d" }}>{t("Discount")}</span>
                 <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", fontWeight: 500 }}>-{formatCurrency(discount)}</span>
               </div>
             )}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 16, borderTop: "1px solid #76777d", fontFamily: "'Hanken Grotesk', sans-serif", fontSize: 20, lineHeight: "28px", fontWeight: 600, color: "#000", marginBottom: 16 }}>
-              <span>Total Amount</span>
+              <span>{t("Total Amount")}</span>
               <span>{formatCurrency(total)}</span>
             </div>
             <div style={{ padding: 16, background: "#f7f9fb", borderLeft: "4px solid #000" }}>
               <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, lineHeight: "14px", letterSpacing: "0.08em", fontWeight: 500, textTransform: "uppercase", color: "#45464d", margin: 0, marginBottom: 4 }}>
-                Balance Due (USD)
+                {t("Balance Due (USD)")}
               </p>
               <p style={{ fontFamily: "'Hanken Grotesk', sans-serif", fontSize: 32, lineHeight: "40px", fontWeight: 600, letterSpacing: "-0.01em", color: "#000", margin: 0 }}>
                 {formatCurrency(total)}
@@ -490,19 +491,19 @@ export function InvoicePDF({
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }}>
             <div>
               <h4 style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", letterSpacing: "0.05em", fontWeight: 500, textTransform: "uppercase", color: "#000", marginBottom: 12 }}>
-                Notes &amp; Terms
+                {t("Notes & Terms")}
               </h4>
               <p style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 14, lineHeight: "20px", color: "#45464d", margin: 0 }}>
-                {notes || "Please make checks payable to the store. All payments are due within 14 days of the invoice date."}
+                {notes || t("Please make checks payable to the store. All payments are due within 14 days of the invoice date.")}
               </p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end" }}>
               <p style={{ fontFamily: "'Hanken Grotesk', sans-serif", fontSize: 20, lineHeight: "28px", fontWeight: 600, color: "#000", margin: 0, marginBottom: 8 }}>
-                Thank you for your business.
+                {t("Thank you for your business.")}
               </p>
               <div style={{ width: 192, height: 1, background: "#c6c6cd", marginBottom: 8 }} />
               <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", letterSpacing: "0.05em", fontWeight: 500, textTransform: "uppercase", color: "#76777d", margin: 0 }}>
-                Authorized Signature
+                {t("Authorized Signature")}
               </p>
             </div>
           </div>

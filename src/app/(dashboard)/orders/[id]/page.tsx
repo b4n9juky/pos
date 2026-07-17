@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { notFound } from "next/navigation"
+import { t } from "@/lib/translate"
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -76,8 +77,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   if (isLoading) {
     return (
-      <DashboardShell title="Loading...">
-        <p className="text-muted-foreground">Loading...</p>
+      <DashboardShell title={t("Loading...")}>
+        <p className="text-muted-foreground">{t("Loading...")}</p>
       </DashboardShell>
     )
   }
@@ -85,61 +86,61 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   if (!order) notFound()
 
   return (
-    <DashboardShell title={`Order ${order.orderNumber}`}>
+    <DashboardShell title={t("Order {orderNumber}", { orderNumber: order.orderNumber })}>
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <Link href="/orders" className={cn(buttonVariants({ variant: "outline" }))}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            {t("Back")}
           </Link>
           <Button variant="outline" onClick={() => setReceiptOpen(true)}>
             <Printer className="mr-2 h-4 w-4" />
-            Invoice
+            {t("Invoice")}
           </Button>
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <Card>
             <CardHeader>
-              <CardTitle>Order Info</CardTitle>
+              <CardTitle>{t("Order Info")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Number</span>
+                <span className="text-muted-foreground">{t("Number")}</span>
                 <span className="font-medium font-mono text-xs">{order.orderNumber}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Date</span>
+                <span className="text-muted-foreground">{t("Date")}</span>
                 <span>{formatDate(order.createdAt)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Status</span>
-                <Badge>{order.status}</Badge>
+                <span className="text-muted-foreground">{t("Status")}</span>
+                <Badge>{t(order.status)}</Badge>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Payment</span>
-                <Badge variant="outline" className="capitalize">{order.paymentMethod}</Badge>
+                <span className="text-muted-foreground">{t("Payment")}</span>
+                <Badge variant="outline" className="capitalize">{t(order.paymentMethod)}</Badge>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Payment Status</span>
-                <Badge variant="secondary">{order.paymentStatus}</Badge>
+                <span className="text-muted-foreground">{t("Payment Status")}</span>
+                <Badge variant="secondary">{t(order.paymentStatus)}</Badge>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Customer</CardTitle>
+              <CardTitle>{t("Customer")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <p className="font-medium">{order.customerName || "Walk-in Customer"}</p>
+              <p className="font-medium">{order.customerName || t("Walk-in Customer")}</p>
               {customer?.email && <p className="text-xs text-muted-foreground">{customer.email}</p>}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Cashier</CardTitle>
+              <CardTitle>{t("Cashier")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <p className="font-medium">{order.userName}</p>
@@ -149,16 +150,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         <Card>
           <CardHeader>
-            <CardTitle>Order Items</CardTitle>
+            <CardTitle>{t("Order Items")}</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead className="text-right">Price</TableHead>
-                  <TableHead className="text-right">Qty</TableHead>
-                  <TableHead className="text-right">Subtotal</TableHead>
+                  <TableHead>{t("Product")}</TableHead>
+                  <TableHead className="text-right">{t("Price")}</TableHead>
+                  <TableHead className="text-right">{t("Qty")}</TableHead>
+                  <TableHead className="text-right">{t("Subtotal")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -179,22 +180,22 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <Card className="w-full max-w-xs">
             <CardContent className="space-y-2 pt-4 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
+                <span className="text-muted-foreground">{t("Subtotal")}</span>
                 <span className="tabular-nums">{formatCurrency(Number(order.subtotal))}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Tax</span>
+                <span className="text-muted-foreground">{t("Tax")}</span>
                 <span className="tabular-nums">{formatCurrency(Number(order.tax))}</span>
               </div>
               {Number(order.discount) > 0 && (
                 <div className="flex justify-between text-destructive">
-                  <span>Discount</span>
+                  <span>{t("Discount")}</span>
                   <span className="tabular-nums">-{formatCurrency(Number(order.discount))}</span>
                 </div>
               )}
               <Separator />
               <div className="flex justify-between text-lg font-bold">
-                <span>Total</span>
+                <span>{t("Total")}</span>
                 <span className="tabular-nums">{formatCurrency(Number(order.total))}</span>
               </div>
             </CardContent>
@@ -205,11 +206,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       <Dialog open={receiptOpen} onOpenChange={setReceiptOpen}>
         <DialogContent className="sm:max-w-[860px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Invoice</DialogTitle>
-            <DialogDescription>Print or download the invoice as PDF</DialogDescription>
+            <DialogTitle>{t("Invoice")}</DialogTitle>
+            <DialogDescription>{t("Print or download the invoice as PDF")}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-wrap items-center gap-3 mb-4">
-            <Label htmlFor="invoice-date">Invoice Date</Label>
+            <Label htmlFor="invoice-date">{t("Invoice Date")}</Label>
             <Input
               id="invoice-date"
               type="date"
@@ -217,7 +218,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               value={invoiceDate}
               onChange={(e) => setInvoiceDate(e.target.value)}
             />
-            <Label htmlFor="invoice-total">Total Amount</Label>
+            <Label htmlFor="invoice-total">{t("Total Amount")}</Label>
             <Input
               id="invoice-total"
               type="number"
@@ -227,7 +228,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             />
             {Number(invoiceTotal) !== Number(order.total) && (
               <span className="text-xs text-muted-foreground">
-                (original: {formatCurrency(Number(order.total))})
+                {t("(original: {amount})", { amount: formatCurrency(Number(order.total)) })}
               </span>
             )}
           </div>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>OmniRetail Pro - Terminal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#c2c6d4",
+                    "surface-variant": "#e2e2e5",
+                    "on-primary": "#ffffff",
+                    "primary-fixed": "#d6e3ff",
+                    "on-secondary": "#ffffff",
+                    "primary-container": "#005eb8",
+                    "primary-fixed-dim": "#a9c7ff",
+                    "tertiary-container": "#9f4300",
+                    "on-tertiary-fixed": "#341100",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-container": "#6ef4ea",
+                    "tertiary-fixed-dim": "#ffb691",
+                    "surface-container-high": "#e8e8ea",
+                    "on-tertiary-container": "#ffcfb9",
+                    "secondary-fixed-dim": "#50dad1",
+                    "on-secondary-fixed-variant": "#00504b",
+                    "inverse-primary": "#a9c7ff",
+                    "on-secondary-container": "#006f69",
+                    "tertiary": "#793100",
+                    "secondary": "#006a64",
+                    "surface-tint": "#005db6",
+                    "inverse-surface": "#2f3133",
+                    "surface-container-low": "#f3f3f6",
+                    "on-primary-container": "#c8daff",
+                    "primary": "#00478d",
+                    "tertiary-fixed": "#ffdbcb",
+                    "on-secondary-fixed": "#00201e",
+                    "surface-bright": "#f9f9fc",
+                    "on-error-container": "#93000a",
+                    "surface-container": "#eeeef0",
+                    "surface": "#f9f9fc",
+                    "on-primary-fixed-variant": "#00468c",
+                    "on-background": "#1a1c1e",
+                    "surface-container-highest": "#e2e2e5",
+                    "on-error": "#ffffff",
+                    "secondary-fixed": "#72f7ed",
+                    "background": "#f9f9fc",
+                    "error": "#ba1a1a",
+                    "outline": "#727783",
+                    "surface-dim": "#dadadc",
+                    "inverse-on-surface": "#f0f0f3",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed": "#001b3d",
+                    "on-tertiary-fixed-variant": "#793100",
+                    "on-surface": "#1a1c1e",
+                    "on-surface-variant": "#424752",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "xl": "32px",
+                    "md": "16px",
+                    "lg": "24px",
+                    "gutter": "16px",
+                    "cart-width": "400px",
+                    "sidebar-width": "280px",
+                    "sm": "8px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-price": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-bold": ["Inter"],
+                    "label-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-price": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-bold": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+        }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-surface overflow-hidden h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface-container-high dark:bg-surface-container-high border-b border-outline-variant dark:border-outline shadow-sm flex justify-between items-center w-full px-md h-16 fixed top-0 z-50">
+<div class="flex items-center gap-md">
+<span class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed">OmniRetail Pro</span>
+<div class="h-6 w-px bg-outline-variant mx-sm"></div>
+<div class="flex flex-col">
+<span class="font-label-bold text-label-bold text-on-surface" id="current-time">12:45:00 PM</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant" id="current-date">Monday, Oct 23, 2023</span>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<div class="flex items-center gap-sm bg-surface-container-lowest px-md py-xs rounded-full border border-outline-variant">
+<span class="material-symbols-outlined text-primary" data-icon="wifi">wifi</span>
+<span class="text-label-sm font-label-sm">Connected</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-variant p-xs rounded-full transition-colors" data-icon="schedule">schedule</span>
+<div class="flex items-center gap-sm cursor-pointer hover:bg-surface-variant p-xs pr-md rounded-full transition-colors">
+<div class="w-8 h-8 rounded-full bg-secondary text-on-secondary flex items-center justify-center font-bold text-label-sm">JD</div>
+<span class="text-label-bold font-label-bold">John Doe</span>
+</div>
+</div>
+</div>
+</header>
+<div class="flex flex-1 pt-16 h-full flex-col">
+<!-- Main Content Area -->
+<main class="flex flex-1 overflow-hidden bg-background flex-col">
+<div class="flex flex-1 flex-col max-w-5xl w-full mx-auto border-x border-outline-variant bg-surface-container-lowest relative overflow-hidden">
+<!-- Barcode Scanner Section - Top focus -->
+<div class="p-md bg-surface-bright border-b border-outline-variant shrink-0">
+<div class="flex items-center justify-between mb-xs">
+<label class="block font-label-bold text-label-bold text-primary">Scan Barcode</label>
+<div class="flex items-center gap-sm text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="info">info</span>
+<span>Scanning Transaction #88241</span>
+</div>
+</div>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-md flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline" data-icon="barcode_scanner">barcode_scanner</span>
+</div>
+<input autofocus="" class="block w-full pl-xl pr-md py-md bg-surface-container-lowest border-2 border-outline-variant rounded-xl focus:border-primary focus:ring-0 focus:outline-none transition-all font-body-lg text-body-lg" placeholder="Enter barcode or item name..." type="text"/>
+<div class="absolute inset-y-0 right-0 pr-md flex items-center">
+<kbd class="hidden md:inline-flex items-center border border-outline-variant rounded px-sm py-xs font-label-sm text-on-surface-variant bg-surface-container-low">
+<span>Enter</span>
+</kbd>
+</div>
+</div>
+</div>
+<!-- Transaction Header & Controls -->
+<div class="px-lg py-sm border-b border-outline-variant flex justify-between items-center bg-surface-container-low/30 shrink-0">
+<h2 class="font-label-bold text-body-lg">Current Sale</h2>
+<div class="flex gap-sm">
+<button class="flex items-center gap-xs px-md py-xs bg-surface-container-high rounded-lg text-label-bold hover:bg-surface-variant transition-colors border border-outline-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="history">history</span>
+            History
+        </button>
+<button class="flex items-center gap-xs px-md py-xs text-error hover:bg-error-container rounded-lg transition-colors border border-transparent hover:border-error-container">
+<span class="material-symbols-outlined text-[18px]" data-icon="delete_sweep">delete_sweep</span>
+            Void All
+        </button>
+</div>
+</div>
+<!-- Cart Items List - COMPACT VIEW -->
+<div class="flex-1 overflow-y-auto custom-scroll p-md space-y-sm">
+<!-- Cart Item 1 - Compact -->
+<div class="flex items-center gap-md p-sm bg-surface-bright border border-outline-variant rounded-lg shadow-sm hover:border-primary/30 transition-colors">
+<div class="w-12 h-12 bg-surface-variant rounded overflow-hidden shrink-0">
+<img alt="Sparkling Soda" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMbjmWrFPw7f6y3DWg28w89fP9WPmhhTO8WQ44j-uqj8C-ToNwsFCVBsosTVp8QdYWX7mgJGOJRqybiMO5QqIEn1TSBR8s0q7I9QrOKRhDmtXHq08pXVag7GoM5Lh0mH4GbZ9Zc1t0MWnbN-w2Br5wYJZd3GEITONirYGb5GC9j9mELjB87QYhoO_FJGy8rvQLJJWy4XopzupHb6W94bgP67a76VrEwvU0ef6jthQCgpMaK39053HPjYDdM4kVO3XNOgWKFJByIuc"/>
+</div>
+<div class="flex-1 flex items-center gap-md">
+<div class="flex-1">
+<h4 class="font-label-bold text-body-md">Sparkling Soda</h4>
+<p class="text-label-sm text-on-surface-variant">330ml • $2.50 / u</p>
+</div>
+<div class="flex items-center gap-xs bg-surface-container-high rounded-lg p-0.5">
+<button class="w-8 h-8 flex items-center justify-center bg-surface-container-lowest border border-outline-variant rounded text-primary hover:bg-primary hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span>
+</button>
+<span class="w-8 text-center font-label-bold">2</span>
+<button class="w-8 h-8 flex items-center justify-center bg-surface-container-lowest border border-outline-variant rounded text-primary hover:bg-primary hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+</button>
+</div>
+<div class="w-20 text-right">
+<p class="font-label-bold text-primary">$5.00</p>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors ml-sm">
+<span class="material-symbols-outlined text-[20px]" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- Cart Item 2 - Compact -->
+<div class="flex items-center gap-md p-sm bg-surface-bright border border-outline-variant rounded-lg shadow-sm hover:border-primary/30 transition-colors">
+<div class="w-12 h-12 bg-surface-variant rounded overflow-hidden shrink-0">
+<img alt="Artisan Baguette" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuc2aP4Kq4OEbVVvxVZNbhk2Q7qfUw_D6GyE0ZYVwuVyUzRXdfWhfhIB7CEZQ2HrRHwxyWPg67k3fI0CkRRWWnp0wAFLqtspwwkD2NzglwNG-ZatIMKZJlkSNnrlIgOqMAOW8ha4rAvPFwk0g5lXdhzwP4tJZLF2_2X5Re8j1jlSkJDWcOLCDExc2eKsiZxf9GxIZj2_bIAhVXg95OpB7gzaTC7wMPWCj2ITxKWYSdSDgE_tnYoPm6cAikqu0nASFzDc6ZCxGmE6g"/>
+</div>
+<div class="flex-1 flex items-center gap-md">
+<div class="flex-1">
+<h4 class="font-label-bold text-body-md">Artisan Baguette</h4>
+<p class="text-label-sm text-on-surface-variant">Fresh • $3.99 / u</p>
+</div>
+<div class="flex items-center gap-xs bg-surface-container-high rounded-lg p-0.5">
+<button class="w-8 h-8 flex items-center justify-center bg-surface-container-lowest border border-outline-variant rounded text-primary hover:bg-primary hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span>
+</button>
+<span class="w-8 text-center font-label-bold">1</span>
+<button class="w-8 h-8 flex items-center justify-center bg-surface-container-lowest border border-outline-variant rounded text-primary hover:bg-primary hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+</button>
+</div>
+<div class="w-20 text-right">
+<p class="font-label-bold text-primary">$3.99</p>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors ml-sm">
+<span class="material-symbols-outlined text-[20px]" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- Cart Item 3 - Compact -->
+<div class="flex items-center gap-md p-sm bg-surface-bright border border-outline-variant rounded-lg shadow-sm hover:border-primary/30 transition-colors">
+<div class="w-12 h-12 bg-surface-variant rounded overflow-hidden shrink-0">
+<img alt="Hass Avocado" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKyZWS1Nwdd4SjRteOKeoVzHAxmgoaq0x37hoqxrPcXTeqhmPpNvGrSBLJV_-RS0FRK6KTOwaD3gPC1FAlwC6ZtGqYGWNjhEOc65xgag610ncVnEXogG4EVPlgkpDi48EbrEh4UzIf1BKA2UTzGc3jdh3MBS05DC7DXBiMh8KyWTFXJOfFSruovEr3bZzyq9x-YnYhyuMO9-KbIT2zUiX25kFimXQYI80FzpG0-WsoWSTybcST7yzdM_x9Y_ZdalSI9fIXF80u1Bw"/>
+</div>
+<div class="flex-1 flex items-center gap-md">
+<div class="flex-1">
+<h4 class="font-label-bold text-body-md">Hass Avocado</h4>
+<p class="text-label-sm text-on-surface-variant">Organic • $1.50 / u</p>
+</div>
+<div class="flex items-center gap-xs bg-surface-container-high rounded-lg p-0.5">
+<button class="w-8 h-8 flex items-center justify-center bg-surface-container-lowest border border-outline-variant rounded text-primary hover:bg-primary hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span>
+</button>
+<span class="w-8 text-center font-label-bold">4</span>
+<button class="w-8 h-8 flex items-center justify-center bg-surface-container-lowest border border-outline-variant rounded text-primary hover:bg-primary hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+</button>
+</div>
+<div class="w-20 text-right">
+<p class="font-label-bold text-primary">$6.00</p>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors ml-sm">
+<span class="material-symbols-outlined text-[20px]" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- PERSISTENT BOTTOM ACTION BAR -->
+<div class="bg-surface-container-high border-t border-outline-variant shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-20">
+<div class="max-w-5xl mx-auto flex items-stretch h-32 lg:h-24">
+<!-- Summary Stats -->
+<div class="flex-1 flex flex-col justify-center px-lg border-r border-outline-variant bg-surface-container-low">
+<div class="flex justify-between text-on-surface-variant text-label-sm">
+<span>Subtotal: $14.99</span>
+<span>Tax: $1.20</span>
+</div>
+<div class="flex justify-between items-baseline mt-xs">
+<span class="text-label-bold text-primary">Total Amount</span>
+<span class="text-headline-md font-bold text-primary">$16.19</span>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex flex-[1.5] items-stretch">
+<div class="flex flex-col flex-1 gap-1 p-2">
+<button class="flex-1 bg-surface-container-highest text-on-surface rounded-lg font-label-bold hover:brightness-95 transition-all flex items-center justify-center gap-xs text-label-sm border border-outline-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="person">person</span>
+                Customer
+            </button>
+<button class="flex-1 bg-surface-container-highest text-on-surface rounded-lg font-label-bold hover:brightness-95 transition-all flex items-center justify-center gap-xs text-label-sm border border-outline-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="sell">sell</span>
+                Discount
+            </button>
+</div>
+<div class="flex-[1.5] p-2">
+<button class="w-full h-full bg-primary-container text-on-primary-container rounded-xl flex flex-col items-center justify-center hover:brightness-110 transition-all shadow-lg active:scale-[0.98] group">
+<span class="text-[10px] uppercase font-bold tracking-widest opacity-70">Proceed to Checkout</span>
+<span class="text-body-lg font-bold">Complete Sale</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Micro-interactions Script -->
+<script>
+        function updateDateTime() {
+            const now = new Date();
+            const timeEl = document.getElementById('current-time');
+            const dateEl = document.getElementById('current-date');
+
+            if (timeEl) {
+                timeEl.textContent = now.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                });
+            }
+
+            if (dateEl) {
+                dateEl.textContent = now.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            }
+        }
+
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+
+        // Scanner Focus Management
+        const scannerInput = document.querySelector('input[type="text"]');
+        document.addEventListener('keydown', (e) => {
+            if (document.activeElement.tagName !== 'INPUT' && e.key.length === 1) {
+                scannerInput.focus();
+            }
+        });
+    </script>
+</body></html>

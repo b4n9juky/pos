@@ -2,7 +2,7 @@
 
 import { db } from "@/db"
 import { orders, orderItems, products, customers, users } from "@/db/schema"
-import { eq, desc, like, or, sql } from "drizzle-orm"
+import { eq, desc, like, or, and, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { randomInt } from "node:crypto"
@@ -15,7 +15,10 @@ const orderItemSchema = z.object({
 })
 
 const createOrderSchema = z.object({
-  customerId: z.number().nullable(),
+  customerId: z.preprocess(
+    (v) => (v === "" || v == null ? null : v),
+    z.number().nullable()
+  ).default(null),
   userId: z.number(),
   subtotal: z.number().min(0),
   tax: z.number().min(0),
@@ -49,14 +52,18 @@ function getOrdersBaseQuery() {
     .leftJoin(users, eq(orders.userId, users.id))
 }
 
-export async function getOrders(search?: string, limit = 50, offset = 0) {
+export async function getOrders(search?: string, limit = 50, offset = 0, userId?: number) {
   const base = getOrdersBaseQuery().orderBy(desc(orders.createdAt))
+  const conditions = []
   if (search) {
     const q = `%${search}%`
-    return base
-      .where(or(like(orders.orderNumber, q), like(customers.name, q)))
-      .limit(limit)
-      .offset(offset)
+    conditions.push(or(like(orders.orderNumber, q), like(customers.name, q)))
+  }
+  if (userId) {
+    conditions.push(eq(orders.userId, userId))
+  }
+  if (conditions.length > 0) {
+    return base.where(and(...conditions)).limit(limit).offset(offset)
   }
   return base.limit(limit).offset(offset)
 }
@@ -95,7 +102,7 @@ export async function createOrder(data: z.infer<typeof createOrderSchema>) {
 
   const result = await db.insert(orders).values({
     orderNumber,
-    customerId: parsed.customerId,
+    ...(parsed.customerId !== null ? { customerId: parsed.customerId } : {}),
     userId: parsed.userId,
     subtotal: String(parsed.subtotal),
     tax: String(parsed.tax),

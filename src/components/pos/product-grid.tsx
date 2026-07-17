@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { t } from "@/lib/translate"
 import { formatCurrency } from "@/lib/format"
 import { useQuery } from "@tanstack/react-query"
 import type { Product } from "@/types"
@@ -67,26 +68,29 @@ export function ProductGrid({ compact, searchInputRef, onFilteredProducts }: Pro
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="space-y-3 p-4 border-b">
+      <div className="space-y-3 p-4 border-b bg-muted/20">
         <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
           <Input
             ref={searchInputRef as any}
-            placeholder="Search by name, SKU, or barcode..."
+            placeholder={t("Search by name, SKU, or barcode...")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
+            className="pl-9 h-10 bg-background"
             autoFocus
           />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
           <Button
             variant={selectedCategory === null ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedCategory(null)}
-            className="shrink-0"
+            className={cn(
+              "shrink-0 h-7 text-xs rounded-full px-3",
+              selectedCategory === null && "shadow-sm"
+            )}
           >
-            All
+            {t("All")}
           </Button>
           {categories.map((cat: any) => (
             <Button
@@ -94,7 +98,10 @@ export function ProductGrid({ compact, searchInputRef, onFilteredProducts }: Pro
               variant={selectedCategory === cat.id ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedCategory(cat.id)}
-              className="shrink-0"
+              className={cn(
+                "shrink-0 h-7 text-xs rounded-full px-3",
+                selectedCategory === cat.id && "shadow-sm"
+              )}
             >
               {cat.name}
             </Button>
@@ -102,34 +109,46 @@ export function ProductGrid({ compact, searchInputRef, onFilteredProducts }: Pro
         </div>
       </div>
       <ScrollArea className="flex-1">
-        <div className={cn("grid gap-3 p-4", compact ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5")}>
+        <div className={cn(
+          "grid gap-3 p-4",
+          compact
+            ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+            : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+        )}>
           {filtered.map((product: any) => (
             <button
               key={product.id}
               onClick={() => handleAdd(product)}
               disabled={product.stock <= 0}
               className={cn(
-                "group flex flex-col items-center justify-center rounded-xl border p-3 text-center hover:border-primary hover:shadow-md",
-                product.stock <= 0 && "cursor-not-allowed opacity-50"
+                "group relative flex flex-col items-center justify-center rounded-xl border bg-card p-3 text-center transition-all duration-200",
+                "hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5",
+                "active:scale-[0.98]",
+                product.stock <= 0 && "cursor-not-allowed opacity-40"
               )}
             >
-              <div className="mb-2 flex h-20 w-20 items-center justify-center rounded-xl bg-muted">
-                <Package className="h-10 w-10 text-muted-foreground/40" />
+              <div className="mb-2.5 flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-b from-muted/60 to-muted/30 group-hover:from-primary/5 group-hover:to-primary/10 transition-colors duration-200">
+                <Package className="h-8 w-8 text-muted-foreground/30 group-hover:text-primary/40 transition-colors duration-200" />
               </div>
-              <p className="line-clamp-2 text-sm font-medium leading-tight">{product.name}</p>
+              <p className="line-clamp-2 text-xs font-semibold leading-snug">{product.name}</p>
               <p className="mt-1 text-sm font-bold text-primary">{formatCurrency(Number(product.price))}</p>
               <Badge
                 variant={product.stock <= product.minStock ? "destructive" : "secondary"}
-                className="mt-1 text-[10px]"
+                className="mt-1.5 text-[9px] h-4 px-1.5"
               >
-                {product.stock} left
+                {product.stock <= 0
+                  ? t("Out of stock")
+                  : t("{stock} left", { stock: product.stock })}
               </Badge>
             </button>
           ))}
           {filtered.length === 0 && (
             <div className="col-span-full flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <Package className="mb-2 h-12 w-12" />
-              <p>No products found</p>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted/50 mb-3">
+                <Package className="h-6 w-6 text-muted-foreground/30" />
+              </div>
+              <p className="text-sm font-medium">{t("No products found")}</p>
+              <p className="text-xs mt-0.5">{t("Try adjusting your search or filters")}</p>
             </div>
           )}
         </div>

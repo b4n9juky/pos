@@ -13,6 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
+import { t } from "@/lib/translate"
 
 interface ImportResult {
   success: number
@@ -77,10 +78,10 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
       const data: ImportResult = await res.json()
       setResult(data)
       if (data.success > 0 && onSuccess) onSuccess()
-      if (data.success > 0) toast.success(`${data.success} ${title.toLowerCase()} imported`)
-      if (data.failed > 0) toast.error(`${data.failed} rows failed`)
+      if (data.success > 0) toast.success(t("{count} {title} imported", { count: data.success, title: title.toLowerCase() }))
+      if (data.failed > 0) toast.error(t("{count} rows failed", { count: data.failed }))
     } catch {
-      toast.error("Import failed")
+      toast.error(t("Import failed"))
     } finally {
       setImporting(false)
     }
@@ -104,9 +105,9 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Import {title}</DialogTitle>
+          <DialogTitle>{t("Import {title}", { title })}</DialogTitle>
           <DialogDescription>
-            Upload an Excel file to bulk import {title.toLowerCase()}. Download the template first to ensure correct format.
+            {t("Upload an Excel file to bulk import {title}. Download the template first to ensure correct format.", { title })}
           </DialogDescription>
         </DialogHeader>
 
@@ -116,7 +117,7 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
             className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
           >
             <Download className="h-4 w-4" />
-            Download template
+            {t("Download template")}
           </a>
 
           <div
@@ -140,14 +141,14 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
             ) : (
               <>
                 <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm font-medium">Click to upload or drag and drop</p>
-                <p className="text-xs text-muted-foreground mt-1">.xlsx or .xls files only</p>
+                <p className="text-sm font-medium">{t("Click to upload or drag and drop")}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t(".xlsx or .xls files only")}</p>
               </>
             )}
           </div>
 
           {fileRows && !result && (
-            <p className="text-sm text-muted-foreground">{parsedRows.length} rows parsed from file</p>
+            <p className="text-sm text-muted-foreground">{t("{count} rows parsed from file", { count: parsedRows.length })}</p>
           )}
 
           {result && (
@@ -155,12 +156,12 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
               <div className="flex gap-4 text-sm">
                 <span className="flex items-center gap-1.5 text-green-600 font-medium">
                   <CheckCircle2 className="h-4 w-4" />
-                  {result.success} imported
+                  {t("{count} imported", { count: result.success })}
                 </span>
                 {result.failed > 0 && (
                   <span className="flex items-center gap-1.5 text-destructive font-medium">
                     <XCircle className="h-4 w-4" />
-                    {result.failed} failed
+                    {t("{count} failed", { count: result.failed })}
                   </span>
                 )}
               </div>
@@ -168,7 +169,7 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
                 <div className="max-h-40 overflow-y-auto rounded border bg-muted/50 p-2 text-xs space-y-1 font-mono">
                   {result.errors.map((e, i) => (
                     <p key={i} className="text-destructive">
-                      Row {e.row}: {e.errors.join("; ")}
+                      {t("Row {n}: {errors}", { n: e.row, errors: e.errors.join("; ") })}
                     </p>
                   ))}
                 </div>
@@ -179,12 +180,12 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
 
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
-            {result ? "Done" : "Cancel"}
+            {result ? t("Done") : t("Cancel")}
           </Button>
           {fileRows && !result && (
             <Button onClick={handleImport} disabled={importing}>
               {importing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {importing ? "Importing..." : `Import ${parsedRows.length} rows`}
+              {importing ? t("Importing...") : t("Import {count} rows", { count: parsedRows.length })}
             </Button>
           )}
         </DialogFooter>

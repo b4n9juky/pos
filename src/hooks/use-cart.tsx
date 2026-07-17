@@ -14,6 +14,7 @@ type CartAction =
   | { type: "UPDATE_QUANTITY"; productId: number; quantity: number }
   | { type: "SET_DISCOUNT"; discount: number }
   | { type: "CLEAR_CART" }
+  | { type: "LOAD_CART"; items: CartItem[]; discount: number }
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
@@ -48,6 +49,8 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       return { ...state, discount: Math.max(0, action.discount) }
     case "CLEAR_CART":
       return { items: [], discount: 0 }
+    case "LOAD_CART":
+      return { items: action.items, discount: action.discount }
     default:
       return state
   }
@@ -67,6 +70,7 @@ interface CartContextValue {
   updateQuantity: (productId: number, quantity: number) => void
   setDiscount: (discount: number) => void
   clearCart: () => void
+  loadCart: (items: CartItem[], discount: number) => void
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
@@ -122,6 +126,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "CLEAR_CART" })
   }, [])
 
+  const loadCart = useCallback((items: CartItem[], discount: number) => {
+    dispatch({ type: "LOAD_CART", items, discount })
+  }, [])
+
   const contextValue = useMemo(
     () => ({
       items: state.items,
@@ -137,8 +145,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       updateQuantity,
       setDiscount,
       clearCart,
+      loadCart,
     }),
-    [state.items, state.discount, subtotal, taxableSubtotal, tax, total, itemCount, taxRate]
+    [state.items, state.discount, subtotal, taxableSubtotal, tax, total, itemCount, taxRate, loadCart]
   )
 
   return (

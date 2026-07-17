@@ -1,0 +1,14 @@
+{
+  "name": "print-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local print proxy for thermal receipt printer",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "node-thermal-printer": "^4.6.0"
+  }
+}

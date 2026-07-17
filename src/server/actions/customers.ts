@@ -5,6 +5,7 @@ import { customers } from "@/db/schema"
 import { eq, like, or } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { auth } from "@/lib/auth"
 
 const customerSchema = z.object({
   name: z.string().min(1).max(255),
@@ -33,12 +34,16 @@ export async function getCustomer(id: number) {
 }
 
 export async function createCustomer(data: z.infer<typeof customerSchema>) {
+  const session = await auth()
+  if (session?.user?.role !== "admin") throw new Error("Unauthorized")
   const parsed = customerSchema.parse(data)
   await db.insert(customers).values(parsed)
   revalidatePath("/customers")
 }
 
 export async function updateCustomer(id: number, data: z.infer<typeof customerSchema>) {
+  const session = await auth()
+  if (session?.user?.role !== "admin") throw new Error("Unauthorized")
   const parsed = customerSchema.parse(data)
   await db.update(customers).set(parsed).where(eq(customers.id, id))
   revalidatePath("/customers")

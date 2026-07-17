@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 
-const publicPaths = ["/login", "/api/auth"]
-const adminOnlyPaths = ["/settings", "/api/users", "/api/settings", "/api/tax-settings"]
+const publicPaths = ["/login", "/api/auth", "/api/print-receipt"]
+const adminOnlyPaths = ["/settings", "/reports", "/api/users", "/api/settings", "/api/tax-settings", "/api/reports"]
+const adminWriteApiPaths = ["/api/products", "/api/categories", "/api/customers"]
+const writeMethods = ["POST", "PATCH", "PUT", "DELETE"]
 
 export default auth((req) => {
   const { pathname } = req.nextUrl
+  const method = req.method ?? "GET"
 
   if (publicPaths.some((p) => pathname.startsWith(p))) {
     return
@@ -30,6 +33,12 @@ export default auth((req) => {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 })
       }
       return NextResponse.redirect(new URL("/pos", req.url))
+    }
+  }
+
+  if (adminWriteApiPaths.some((p) => pathname.startsWith(p))) {
+    if (writeMethods.includes(method) && req.auth.user?.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
   }
 })

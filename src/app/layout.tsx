@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "POS - Point of Sales",
-  description: "Point of Sales Management System",
+  description: "Sistem Manajemen Point of Sales",
 }
 
 export default function RootLayout({
@@ -29,11 +29,11 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="id"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex">
+      <body className="min-h-full">
         <ThemeProvider>
           <SessionProvider>
             <QueryProvider>

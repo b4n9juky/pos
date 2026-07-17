@@ -3,6 +3,7 @@
 import { forwardRef } from "react"
 import type { CartItem, PaymentMethod } from "@/types"
 import { formatCurrency } from "@/lib/format"
+import { t } from "@/lib/translate"
 import { APP_NAME } from "@/lib/constants"
 
 interface ReceiptProps {
@@ -29,16 +30,16 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(
         </div>
 
         <div className="border-b pb-1 mb-1">
-          <p>Order: {orderNumber}</p>
-          <p>Date: {new Date().toLocaleDateString("id-ID")}</p>
-          {customerName && <p>Customer: {customerName}</p>}
+          <p>{t("Order:")} {orderNumber}</p>
+          <p>{t("Date:")} {new Date().toLocaleDateString("id-ID")}</p>
+          {customerName && <p>{t("Customer:")} {customerName}</p>}
         </div>
 
         <div className="border-b pb-1 mb-1">
           <div className="flex justify-between font-medium">
-            <span className="flex-1">Item</span>
-            <span className="w-12 text-right">Qty</span>
-            <span className="w-16 text-right">Total</span>
+            <span className="flex-1">{t("Item")}</span>
+            <span className="w-12 text-right">{t("Qty")}</span>
+            <span className="w-16 text-right">{t("Total")}</span>
           </div>
           {items.map((item) => (
             <div key={item.product.id} className="flex justify-between">
@@ -51,37 +52,37 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(
 
         <div className="space-y-0.5">
           <div className="flex justify-between">
-            <span>Subtotal</span>
+            <span>{t("Subtotal")}</span>
             <span>{formatCurrency(subtotal)}</span>
           </div>
           <div className="flex justify-between">
-            <span>Tax (10%)</span>
+            <span>{t("Tax ({rate}%)", { rate: 10 })}</span>
             <span>{formatCurrency(tax)}</span>
           </div>
           {discount > 0 && (
             <div className="flex justify-between">
-              <span>Discount</span>
+              <span>{t("Discount")}</span>
               <span>-{formatCurrency(discount)}</span>
             </div>
           )}
           <div className="flex justify-between font-bold border-t pt-0.5">
-            <span>Total</span>
+            <span>{t("Total")}</span>
             <span>{formatCurrency(total)}</span>
           </div>
           <div className="flex justify-between">
-            <span>Paid ({paymentMethod})</span>
+            <span>{t("Paid ({method})", { method: t(paymentMethod) })}</span>
             <span>{formatCurrency(amountPaid)}</span>
           </div>
           {change > 0 && (
             <div className="flex justify-between">
-              <span>Change</span>
+              <span>{t("Change")}</span>
               <span>{formatCurrency(change)}</span>
             </div>
           )}
         </div>
 
         <div className="text-center border-t pt-2 mt-2 text-[10px] text-gray-500">
-          <p>Thank you for your purchase!</p>
+          <p>{t("Thank you for your purchase!")}</p>
         </div>
       </div>
     )

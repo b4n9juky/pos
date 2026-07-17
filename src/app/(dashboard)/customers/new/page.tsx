@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import Link from "next/link"
+import { t } from "@/lib/translate"
 
 export default function NewCustomerPage() {
   const router = useRouter()
@@ -36,41 +37,41 @@ export default function NewCustomerPage() {
         }),
       })
       if (!res.ok) throw new Error("Failed to save")
-      toast.success("Customer created")
+      toast.success(t("Customer created"))
       router.push("/customers")
       router.refresh()
     } catch {
-      toast.error("Failed to create customer")
+      toast.error(t("Failed to create customer"))
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <DashboardShell title="Add Customer">
+    <DashboardShell title={t("Add Customer")}>
       <form onSubmit={handleSubmit}>
         <div className="space-y-6 max-w-2xl">
           <Card>
             <CardHeader>
-              <CardTitle>Customer Information</CardTitle>
+              <CardTitle>{t("Customer Information")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
+                  <Label htmlFor="name">{t("Name *")}</Label>
                   <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t("Email")}</Label>
                   <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
+                <Label htmlFor="phone">{t("Phone")}</Label>
                 <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="address">{t("Address")}</Label>
                 <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} />
               </div>
             </CardContent>
@@ -79,11 +80,11 @@ export default function NewCustomerPage() {
           <div className="flex items-center gap-3">
             <Link href="/customers" className={cn(buttonVariants({ variant: "outline" }))}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Cancel
+              {t("Cancel")}
             </Link>
             <Button type="submit" disabled={saving}>
               <Save className="mr-2 h-4 w-4" />
-              {saving ? "Saving..." : "Save Customer"}
+              {saving ? t("Saving...") : t("Save Customer")}
             </Button>
           </div>
         </div>

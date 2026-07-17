@@ -6,6 +6,10 @@ export interface Shortcut {
   key: string
   handler: (e: KeyboardEvent) => void
   ignoreWhenInput?: boolean
+  ctrlKey?: boolean
+  shiftKey?: boolean
+  altKey?: boolean
+  metaKey?: boolean
 }
 
 export function useKeyboard(shortcuts: Shortcut[], enabled = true) {
@@ -23,8 +27,12 @@ export function useKeyboard(shortcuts: Shortcut[], enabled = true) {
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
         target.tagName === "SELECT"
-      for (const { key, handler: fn, ignoreWhenInput = true } of ref.current) {
+      for (const { key, handler: fn, ignoreWhenInput = true, ctrlKey, shiftKey, altKey, metaKey } of ref.current) {
         if (e.key !== key) continue
+        if (ctrlKey !== undefined && e.ctrlKey !== ctrlKey) continue
+        if (shiftKey !== undefined && e.shiftKey !== shiftKey) continue
+        if (altKey !== undefined && e.altKey !== altKey) continue
+        if (metaKey !== undefined && e.metaKey !== metaKey) continue
         if (ignoreWhenInput && isInput) continue
         fn(e)
       }

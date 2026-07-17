@@ -1,135 +1,79 @@
-# POS (Point of Sales) Application Plan
+# Plan: Replace PowerShell GDI+ Printing with ESC/POS via node-thermal-printer
 
-## Tech Stack
+## Problem
 
-| Layer | Choice |
-|---|---|
-| Framework | **Next.js 14 (App Router)** — Server Components, Server Actions |
-| Auth | **NextAuth.js v5** — credentials provider (email/password) |
-| Database | **Drizzle ORM + mysql2** — type-safe SQL, migrations |
-| Client State | **TanStack React Query** — server-state caching, optimistic updates |
-| Tables | **TanStack Table** — sorting, filtering, pagination |
-| UI | **shadcn/ui + Tailwind CSS** — accessible, themed components |
-| Forms | **React Hook Form + Zod** — validated forms |
-| Printing | **@react-print** + iframe-based receipt rendering |
-
----
-
-## Database Schema (7 tables)
+Saat ini cetak struk menggunakan arsitektur yang rumit dan rapuh:
 
 ```
-users ──┐
-         ├── orders ── order_items ── products
-         │                              └── categories
-         └── cash_registers
-customers ──┘
-payments ──┘
+Client → Next.js API (/api/print-receipt) → PowerShell (dotnet-print2.ps1) → GDI+ (System.Drawing.Printing)
+  └→ Fallback: Client → Proxy (print-server, port 8090) → PowerShell → GDI+
 ```
 
-### Tables
+Masalah:
+1. **Plaintext via GDI+** — Menggunakan font `Courier New` yang dirender Windows, bukan ESC/POS native. Tidak bisa cetak barcode/QR code.
+2. **PowerShell dependency** — Rawan masalah permission, execution policy, path issues.
+3. **Print proxy terpisah** — Perlu menjalankan `print-server/start.bat` secara terpisah.
+4. **Performa buruk** — Multi-hop architecture lambat dan tidak stabil.
 
-- **users** — id, name, email, password_hash, role (admin/cashier), active, timestamps
-- **categories** — id, name, slug, description, timestamps
-- **products** — id, name, sku, barcode, description, price, cost_price, stock, min_stock, category_id, image, active, timestamps
-- **customers** — id, name, email, phone, address, loyalty_points, timestamps
-- **orders** — id, order_number, customer_id, user_id, subtotal, tax, discount, total, payment_method, payment_status, status, notes, timestamps
-- **order_items** — id, order_id, product_id, quantity, unit_price, subtotal
-- **payments** — id, order_id, amount, payment_method, reference
-- **cash_registers** — id, user_id, opened_at, closed_at, opening_balance, closing_balance, expected_balance, status, notes
+## Solution
 
----
-
-## Project Structure
+Ganti dengan **`node-thermal-parinter`** library yang mengirim ESC/POS commands langsung ke printer via winspool (Windows native printing).
 
 ```
-pos/
-├── src/
-│   ├── app/
-│   │   ├── (auth)/login/
-│   │   ├── (dashboard)/
-│   │   │   ├── pos/
-│   │   │   ├── products/
-│   │   │   ├── categories/
-│   │   │   ├── customers/
-│   │   │   ├── orders/
-│   │   │   ├── reports/
-│   │   │   ├── register/
-│   │   │   └── settings/
-│   │   ├── api/auth/[...nextauth]/
-│   │   └── layout.tsx
-│   ├── components/
-│   │   ├── ui/          (shadcn primitives)
-│   │   ├── pos/         (Cart, ProductGrid, PaymentModal, Receipt)
-│   │   ├── tables/      (TanStack Table wrappers)
-│   │   ├── forms/       (ProductForm, CustomerForm, CategoryForm)
-│   │   └── layout/      (Sidebar, Header, Nav)
-│   ├── db/
-│   │   ├── schema/      (Drizzle schema files)
-│   │   └── index.ts     (Connection + client)
-│   ├── lib/             (Auth config, constants, utils)
-│   ├── hooks/           (useCart, useDebounce)
-│   ├── server/actions/  (Server Actions — mutations)
-│   ├── providers/       (QueryClient, Session, Theme)
-│   └── styles/globals.css
-├── drizzle.config.ts
-├── next.config.ts
-├── package.json
-├── tsconfig.json
-└── tailwind.config.ts
+Client → Next.js API (/api/print-receipt) → node-thermal-printer → winspool → printer
 ```
 
----
+## Changes
 
-## Data Flow
+### 1. Install dependency
+- Tambah `node-thermal-printer` di root `package.json`
+- Tambah `serverExternalPackages` di `next.config.ts`
 
-```
-User Action
-    ↓
-Server Action (mutation) ──→ Drizzle ORM ──→ MySQL
-    ↓
-revalidatePath / revalidateTag
-    ↓
-React Query refetch ←── Server Component re-render
-    ↓
-TanStack Table / UI updates
-```
+### 2. Rewrite `src/app/api/print-receipt/route.ts`
+- Hapus PowerShell call, `buildReceipt`, `execSync`
+- Gunakan `node-thermal-printer` untuk:
+  - Alignment, bold, font size
+  - Text tabel items
+  - Paper cut (auto-cut dari settings)
+  - Cash drawer kick
+- Dukungan 58mm (32 chars) dan 80mm (42 chars)
 
-- **Mutations**: Server Actions → Drizzle → revalidate + invalidate React Query cache
-- **Queries**: Server Components fetch directly; client components use React Query + TanStack Table
+### 3. New: `src/app/api/print-receipt/detect/route.ts`
+- Deteksi printer Windows via PowerShell `Get-Printer`
+- Return daftar nama printer
 
----
+### 4. New: `src/app/api/print-receipt/test/route.ts`
+- Cetak struk test menggunakan `node-thermal-printer`
+- Data dummy untuk verifikasi printer
 
-## Implementation Order
+### 5. Update `src/lib/print.ts`
+- `sendToThermalPrinter` — tetap sama, payload tidak berubah
+- `detectPrinters` — change dari `http://localhost:8090/detect` ke `/api/print-receipt/detect`
+- `testPrint` — change dari `http://localhost:8090/test` ke `/api/print-receipt/test`
+- Hapus `checkProxyStatus` (tidak diperlukan lagi)
 
-| Step | Description |
-|------|-------------|
-| 1 | Scaffold Next.js + deps, configure Tailwind + shadcn |
-| 2 | Drizzle schemas + migration |
-| 3 | NextAuth v5 setup + middleware |
-| 4 | Auth pages + dashboard layout with sidebar |
-| 5 | Products & Categories CRUD |
-| 6 | Customers CRUD |
-| 7 | POS Checkout (cart, product grid, checkout modal) |
-| 8 | Orders management + receipt printing |
-| 9 | Cash Register module |
-| 10 | Sales Reports + seed script |
+### 6. Update `src/app/(dashboard)/settings/page.tsx`
+- Hapus proxy status check (`proxyOnline`, `proxyChecking`)
+- `handleDetectPrinters` → panggil `/api/print-receipt/detect`
+- `handleTestPrint` → panggil `/api/print-receipt/test`
+- Hapus UI indikator proxy online/offline
 
----
+## Files Affected
 
-## Route Design
+| File | Action |
+|------|--------|
+| `package.json` | Tambah dependency |
+| `next.config.ts` | Tambah serverExternalPackages |
+| `src/app/api/print-receipt/route.ts` | Rewrite |
+| `src/app/api/print-receipt/detect/route.ts` | Create |
+| `src/app/api/print-receipt/test/route.ts` | Create |
+| `src/lib/print.ts` | Update |
+| `src/app/(dashboard)/settings/page.tsx` | Update |
 
-| Route | Purpose |
-|-------|---------|
-| `/login` | Auth page |
-| `/pos` | Main POS checkout interface |
-| `/products` | Product list with search/filter |
-| `/products/new` | Add new product |
-| `/products/[id]` | Edit product |
-| `/categories` | Category management |
-| `/customers` | Customer list |
-| `/customers/new` | Add customer |
-| `/orders` | Order history |
-| `/orders/[id]` | Order detail |
-| `/reports` | Sales reports dashboard |
-| `/register` | Cash register open/close |
-| `/settings` | User management, store settings |
+## Rollback Plan
+
+Jika terjadi masalah:
+1. `git checkout -- src/app/api/print-receipt/route.ts src/lib/print.ts` — revert code changes
+2. `git checkout -- src/app/(dashboard)/settings/page.tsx` — revert settings
+3. `npm uninstall node-thermal-printer` — remove package
+4. Kembali menggunakan print-server proxy seperti sebelumnya

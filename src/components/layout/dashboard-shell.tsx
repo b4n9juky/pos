@@ -18,11 +18,13 @@ export function DashboardShell({ children, title, hideSidebar, hideHeader }: Das
   const hasPadding = showSidebar
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-background via-background to-muted/30">
       {showSidebar && <Sidebar />}
       <div className="flex flex-1 flex-col overflow-hidden">
         {showHeader && <Header title={title} />}
-        <main className={cn("flex-1 overflow-auto", hasPadding && "p-6")}>{children}</main>
+        <main className={cn("flex-1 overflow-auto", hasPadding && "p-6")}>
+          {children}
+        </main>
       </div>
     </div>
   )

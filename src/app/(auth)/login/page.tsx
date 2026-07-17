@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { Eye, EyeOff, User, HelpCircle, Lock } from "lucide-react"
 import { toast } from "sonner"
+import { t } from "@/lib/translate"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -41,10 +42,10 @@ export default function LoginPage() {
         router.push("/pos")
         router.refresh()
       } else {
-        toast.error("Invalid email or password")
+        toast.error(t("Invalid email or password"))
       }
     } catch {
-      toast.error("Something went wrong")
+      toast.error(t("Something went wrong"))
     } finally {
       setLoading(false)
     }
@@ -86,22 +87,22 @@ export default function LoginPage() {
           >
             <div className="space-y-1 text-center">
               <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-                Secure Terminal Access
+                {t("Secure Terminal Access")}
               </h1>
               <p className="text-muted-foreground">
-                Authorize your session to continue
+                {t("Authorize your session to continue")}
               </p>
             </div>
 
             <form onSubmit={handleLogin} className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">
                 <label className="font-['JetBrains_Mono',monospace] text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  Staff ID / Email
+                  {t("Staff ID / Email")}
                 </label>
                 <div className="relative">
                   <input
                     className="w-full border-b-2 border-transparent bg-background px-4 py-2 text-foreground placeholder:text-muted-foreground/50 outline-none transition-colors focus:border-emerald-600 focus:ring-0"
-                    placeholder="Enter credentials"
+                    placeholder={t("Enter credentials")}
                     type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -113,7 +114,7 @@ export default function LoginPage() {
 
               <div className="flex flex-col gap-1">
                 <label className="font-['JetBrains_Mono',monospace] text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  Password
+                  {t("Password")}
                 </label>
                 <div className="relative">
                   <input
@@ -144,7 +145,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full bg-emerald-600 py-3 text-lg font-semibold text-white transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? "Signing in..." : "Log In"}
+                {loading ? t("Signing in...") : t("Log In")}
               </button>
             </form>
           </div>
@@ -152,18 +153,18 @@ export default function LoginPage() {
           <div className="mt-6 flex items-center gap-2">
             <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
             <span className="font-['JetBrains_Mono',monospace] text-xs text-muted-foreground">
-              System Status: Online
+              {t("System Status: Online")}
             </span>
           </div>
         </div>
       </main>
 
       <footer className="flex w-full flex-col items-center justify-between border-t border-white/5 bg-black/20 px-6 py-4 md:flex-row md:px-12">
-        <div className="font-['JetBrains_Mono',monospace] text-xs font-bold text-foreground">
-          &copy; 2024 EasyPOS Systems. All Rights Reserved.
-        </div>
+          <div className="font-['JetBrains_Mono',monospace] text-xs font-bold text-foreground">
+            {t("© 2024 EasyPOS Systems. All Rights Reserved.")}
+          </div>
         <div className="mt-2 flex gap-4 md:mt-0">
-          {["Support", "Security Protocol", "Terms of Service", "Contact"].map(
+          {[t("Support"), t("Security Protocol"), t("Terms of Service"), t("Contact")].map(
             (link) => (
               <a
                 key={link}

@@ -96,3 +96,31 @@ To add a new shortcut: add a `useKeyboard` call in the relevant component with `
 - `tsconfig.json`: `strict: true`, `moduleResolution: "bundler"`, `incremental: true`
 - `drizzle.config.ts` in root, schema at `src/db/schema/*.ts`, migrations at `src/db/migrations/`
 - ESLint: flat config `eslint.config.mjs`, Next.js core-web-vitals + TypeScript
+
+## Portable deployment
+
+Batch files in `portable/` (synced to `dist/` by `tools/build-portable.ps1`):
+
+| File | Purpose |
+|------|---------|
+| `setup.bat` | One-time install: init MariaDB, create DB, run migrations, seed, generate `.env`, create shortcut |
+| `start.bat` | Daily start: kill old processes, start MariaDB (port 3307), start print server (8090), start Next.js app (3000) |
+| `uninstall.bat` | Remove all data, config, shortcut |
+| `seed-db.bat` | Re-run seed.sql |
+
+### Key fixes applied during development:
+
+1. **Error visibility**: Removed `>nul 2>&1` from all critical MariaDB/MySQL commands in `setup.bat` and `start.bat`. Errors now show on screen and are logged to MariaDB `.err` files.
+2. **Longer MariaDB wait**: `start.bat` now waits up to 60 seconds (was 15) for MariaDB crash recovery.
+3. **Cleanup on reinstall**: `setup.bat` kills existing MariaDB processes and cleans `data\mysql\` before re-initializing.
+4. **`s start command fix**: Replaced fragile `start /MIN cmd /c "cd /d && ..."` pattern with temp batch file (`%TEMP%\pos-start-{app,print}.bat`) to avoid quoting/parsing issues.
+5. **Don't kill all node.exe**: `start.bat` no longer runs `taskkill /f /im node.exe` (was killing unrelated Node processes).
+6. **AUTH_URL fix**: Generated `.env` now includes `AUTH_URL=http://localhost:3000` — required by NextAuth v5 for correct logout redirects. Without it, redirect defaults to `http://0.0.0.0:3000`.
+7. **`.env` validation**: `start.bat` exits with error if `.env` is missing.
+8. **Error log tail**: If MariaDB fails to start, error shows the last 10 lines from `data\mysql\*.err` + `netstat` port check. If Next.js fails, shows last 10 lines of `app\server.log`.
+
+### End-user requirements on target computer:
+- Node.js v22.14.0 portable (ZIP) extracted to `node/`
+- MariaDB 11.7.2 portable (ZIP) extracted to `mariadb/`
+- `setup.bat` must be run as Administrator before first use
+- Ports: 3000 (app), 3307 (MariaDB), 8090 (print server)

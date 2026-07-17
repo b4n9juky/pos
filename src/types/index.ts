@@ -97,6 +97,17 @@ export interface CartItem {
   quantity: number
 }
 
+export interface HeldTransaction {
+  id: number
+  userId: number
+  reference: string
+  customerId: number | null
+  discount: number
+  items: { productId: number; quantity: number; price: number; name: string; taxable: boolean; taxRate: number | null }[]
+  notes: string | null
+  createdAt: string
+}
+
 export interface SalesSummary {
   total_sales: number
   total_orders: number
