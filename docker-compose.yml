@@ -6,7 +6,7 @@ services:
     volumes:
       - pos_data:/var/lib/mysql
     environment:
-      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD required}
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD:-rahmat123}
       MARIADB_DATABASE: pos_rahmat
     healthcheck:
       test:
@@ -28,9 +28,9 @@ services:
     container_name: pos-app
     restart: unless-stopped
     environment:
-      DATABASE_URL: mysql://root:${DB_PASSWORD:?}@db:3306/pos_rahmat
-      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET required}
-      NEXT_PUBLIC_APP_URL: ${APP_URL:?APP_URL required}
+      DATABASE_URL: mysql://root:${DB_PASSWORD:-rahmat123}@db:3306/pos_rahmat
+      AUTH_SECRET: ${AUTH_SECRET:-default-secret-change-in-production}
+      NEXT_PUBLIC_APP_URL: ${APP_URL:-http://localhost:3000}
       DB_SEED: ${DB_SEED:-false}
       DB_MIGRATE: ${DB_MIGRATE:-true}
     depends_on:
