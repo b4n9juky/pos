@@ -1,4 +1,4 @@
-import { getProduct, updateProduct, deactivateProduct } from "@/server/actions/products"
+import { getProduct, updateProduct, deactivateProduct, reactivateProduct, deleteProduct } from "@/server/actions/products"
 import { NextResponse } from "next/server"
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -15,8 +15,20 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   return NextResponse.json({ success: true })
 }
 
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  await reactivateProduct(Number(id))
+  return NextResponse.json({ success: true })
+}
+
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  await deactivateProduct(Number(id))
+  const url = new URL(req.url)
+  const hard = url.searchParams.get("hard") === "true"
+  if (hard) {
+    await deleteProduct(Number(id))
+  } else {
+    await deactivateProduct(Number(id))
+  }
   return NextResponse.json({ success: true })
 }

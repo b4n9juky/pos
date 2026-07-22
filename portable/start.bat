@@ -19,10 +19,27 @@ echo ============================================
 echo.
 
 :: --- Kill any existing instances ---
-echo [1/4] Membersihkan proses sebelumnya...
+echo [1/5] Membersihkan proses sebelumnya...
 taskkill /f /im mariadbd.exe >nul 2>&1
 taskkill /f /im mysqld.exe >nul 2>&1
 timeout /t 2 /nobreak >nul
+
+:: --- Allow ports through Windows Firewall ---
+echo [2/5] Mengizinkan port 3000 ^& 8090 untuk akses LAN...
+netsh advfirewall firewall delete rule name="POS Rahmat (TCP 3000)" >nul 2>&1
+netsh advfirewall firewall add rule name="POS Rahmat (TCP 3000)" dir=in action=allow protocol=TCP localport=3000 >nul 2>&1
+if !errorlevel! equ 0 (
+  echo   [OK] Firewall rule port 3000 ditambahkan
+) else (
+  echo   [INFO] Gagal menambah firewall rule port 3000 (butuh Admin)
+)
+netsh advfirewall firewall delete rule name="POS Rahmat (TCP 8090)" >nul 2>&1
+netsh advfirewall firewall add rule name="POS Rahmat (TCP 8090)" dir=in action=allow protocol=TCP localport=8090 >nul 2>&1
+if !errorlevel! equ 0 (
+  echo   [OK] Firewall rule port 8090 ditambahkan
+) else (
+  echo   [INFO] Gagal menambah firewall rule port 8090 (butuh Admin)
+)
 
 :: --- Find MariaDB (allow nested folder) ---
 set "MARIA_DIR=mariadb"
@@ -40,7 +57,7 @@ set "MYSQL_CLIENT=mariadb.exe"
 if not exist "!MARIA_DIR!\bin\!MYSQL_CLIENT!" set "MYSQL_CLIENT=mysql.exe"
 
 :: --- Start MariaDB ---
-echo [2/4] Menjalankan MariaDB (port 3307)...
+echo [3/5] Menjalankan MariaDB (port 3307)...
 start /B "" "!MARIA_DIR!\bin\!MYSQLD!" --datadir="%~dp0data\mysql" --port=3307 --skip-grant-tables
 
 :: Wait for MariaDB (up to 60 seconds)
@@ -100,24 +117,45 @@ if not exist ".env" (
 )
 copy /y ".env" "app\.env" >nul
 
-:: --- Start Print Server ---
-echo [3/4] Menjalankan Print Server...
-if exist "%TEMP%\pos-start-print.bat" del "%TEMP%\pos-start-print.bat" >nul 2>&1
->"%TEMP%\pos-start-print.bat" (
-  echo @echo off
-  echo cd /d "%~dp0print-server"
-  echo "%~dp0!NODE_DIR!\node.exe" server.js
+:: --- Detect LAN IP ---
+echo [LAN] Mendeteksi IP lokal...
+set "LAN_IP="
+for /f "usebackq delims=" %%a in (`powershell -NoProfile -Command "(Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notmatch '^(169\.254|127\.)' -and $_.PrefixOrigin -ne 'LinkLocal' } | Select-Object -First 1 -ExpandProperty IPAddress)" 2^>nul`) do set "LAN_IP=%%a"
+if defined LAN_IP (
+  echo   LAN IP: !LAN_IP!
+) else (
+  echo   [WARNING] Gagal mendeteksi LAN IP.
 )
-start "POS Print Proxy" /MIN "%TEMP%\pos-start-print.bat"
-echo   Print Server: http://localhost:8090
+
+:: --- Start Print Agent ---
+echo [4/5] Menjalankan Print Agent...
+:: Cari folder printer-server / print-server (bisa di subfolder atau satu level di atas)
+set "PRINT_SERVER_DIR="
+for %%d in (printer-server print-server) do (
+  if not defined PRINT_SERVER_DIR if exist "%~dp0%%d\agent.ps1" set "PRINT_SERVER_DIR=%~dp0%%d"
+  if not defined PRINT_SERVER_DIR if exist "%~dp0%%d\start-agent.bat" set "PRINT_SERVER_DIR=%~dp0%%d"
+)
+for %%d in (printer-server print-server) do (
+  if not defined PRINT_SERVER_DIR if exist "%~dp0..\%%d\agent.ps1" set "PRINT_SERVER_DIR=%~dp0..\%%d"
+  if not defined PRINT_SERVER_DIR if exist "%~dp0..\%%d\start-agent.bat" set "PRINT_SERVER_DIR=%~dp0..\%%d"
+)
+if not defined PRINT_SERVER_DIR (
+  echo   [WARNING] Folder printer-server / print-server tidak ditemukan
+  echo   Coba: %~dp0printer-server, %~dp0print-server, %~dp0..\printer-server, %~dp0..\print-server
+) else (
+  start "POS Print Agent (ESC/POS)" powershell -NoProfile -ExecutionPolicy Bypass -File "!PRINT_SERVER_DIR!\agent.ps1" -Port 8090
+  echo   Print Agent: http://localhost:8090
+  echo   ^> Cari jendela POS Print Agent di taskbar
+)
 
 :: --- Start Next.js App ---
-echo [4/4] Menjalankan POS Rahmat...
+echo [5/5] Menjalankan POS Rahmat...
 :: Use temp batch file to avoid cmd /c quoting issues
 if exist "%TEMP%\pos-start-app.bat" del "%TEMP%\pos-start-app.bat" >nul 2>&1
 >"%TEMP%\pos-start-app.bat" (
   echo @echo off
   echo cd /d "%~dp0app"
+  echo set HOSTNAME=0.0.0.0
   echo "%~dp0!NODE_DIR!\node.exe" server.js ^> "%~dp0app\server.log" 2^>^&1
 )
 start "POS Rahmat App" /MIN "%TEMP%\pos-start-app.bat"
@@ -145,8 +183,24 @@ if exist "app\server.log" (
 
 :server_ready
 echo.
+:: --- Verify port binding ---
+echo [CHECK] Verifikasi port 3000:
+powershell -NoProfile -Command "netstat -ano | findstr ':3000 '" 2>nul
+if defined LAN_IP (
+  echo.
+  echo [CHECK] Uji akses via LAN IP...
+  powershell -NoProfile -Command "try { $r = curl.exe -s -o nul -w \"%%{http_code}\" http://!LAN_IP!:3000 2>$null; if ($r -ne '' -and $r -ne '000') { exit 0 } } catch {}; exit 1" >nul 2>&1
+  if !errorlevel! equ 0 (
+    echo   [OK] LAN IP !LAN_IP!:3000 dapat diakses
+  ) else (
+    echo   [WARNING] LAN IP !LAN_IP!:3000 tidak merespon
+    echo   Kemungkinan: firewall blokir, atau HOSTNAME tidak 0.0.0.0
+  )
+)
+echo.
 echo ============================================
-echo   App:       http://localhost:3000
+echo   Local:     http://localhost:3000
+if defined LAN_IP echo   LAN:       http://!LAN_IP!:3000
 echo   Print:     http://localhost:8090
 echo ============================================
 echo.

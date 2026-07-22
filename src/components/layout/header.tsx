@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { ChevronDown, LogOut, User, Settings, Bell } from "lucide-react"
 import { signOut, useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -16,9 +17,10 @@ import {
 
 interface HeaderProps {
   title?: string
+  actions?: ReactNode
 }
 
-export function Header({ title }: HeaderProps) {
+export function Header({ title, actions }: HeaderProps) {
   const { data: session } = useSession()
   const user = session?.user
   const name = user?.name ?? "User"
@@ -35,6 +37,7 @@ export function Header({ title }: HeaderProps) {
       {title && (
         <h1 className="text-base font-semibold text-foreground tracking-tight">{title}</h1>
       )}
+      {actions && <div className="flex items-center gap-2">{actions}</div>}
       <div className="flex-1" />
 
       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground relative">
@@ -71,7 +74,10 @@ export function Header({ title }: HeaderProps) {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-sm gap-2 text-destructive focus:text-destructive"
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={async () => {
+              await signOut({ redirect: false })
+              window.location.href = "/login"
+            }}
           >
             <LogOut className="h-4 w-4" />
             Keluar

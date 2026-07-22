@@ -1,4 +1,4 @@
-import { mysqlTable, varchar, text, decimal, int, timestamp, boolean, index } from "drizzle-orm/mysql-core"
+import { mysqlTable, varchar, text, decimal, int, timestamp, boolean, index, uniqueIndex } from "drizzle-orm/mysql-core"
 import { categories } from "./categories"
 
 export const products = mysqlTable("products", {
@@ -16,10 +16,11 @@ export const products = mysqlTable("products", {
   taxable: boolean("taxable").notNull().default(true),
   taxRate: decimal("tax_rate", { precision: 5, scale: 2 }),
   active: boolean("active").notNull().default(true),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 }, (table) => [
   index("sku_idx").on(table.sku),
-  index("barcode_idx").on(table.barcode),
+  uniqueIndex("barcode_idx").on(table.barcode),
   index("category_idx").on(table.categoryId),
 ])

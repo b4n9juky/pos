@@ -2,34 +2,47 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import {
   ShoppingCart, Package, FolderTree, Users, FileText, BarChart3, Settings,
-  CircleDollarSign, ChevronLeft, Monitor, LayoutDashboard,
+  CircleDollarSign, ChevronLeft, Monitor, LayoutDashboard, LogOut, XCircle,
+  Sun, Moon, Gauge,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { APP_NAME } from "@/lib/constants"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useTheme } from "next-themes"
 
 const allNavItems = [
-  { href: "/pos", label: "POS", icon: ShoppingCart, adminOnly: false },
-  { href: "/products", label: "Produk", icon: Package, adminOnly: true },
-  { href: "/categories", label: "Kategori", icon: FolderTree, adminOnly: true },
-  { href: "/customers", label: "Pelanggan", icon: Users, adminOnly: true },
-  { href: "/orders", label: "Pesanan", icon: FileText, adminOnly: false },
-  { href: "/reports", label: "Laporan", icon: BarChart3, adminOnly: true },
-  { href: "/register", label: "Kasir", icon: CircleDollarSign, adminOnly: false },
-  { href: "/settings", label: "Pengaturan", icon: Settings, adminOnly: true },
+  { href: "/dashboard", label: "Dashboard", icon: Gauge, roles: ["owner"] },
+  { href: "/pos", label: "POS", icon: ShoppingCart, roles: ["admin", "cashier", "owner"] },
+  { href: "/products", label: "Produk", icon: Package, roles: ["admin", "warehouse", "owner"] },
+  { href: "/categories", label: "Kategori", icon: FolderTree, roles: ["admin"] },
+  { href: "/customers", label: "Pelanggan", icon: Users, roles: ["admin"] },
+  { href: "/orders", label: "Pesanan", icon: FileText, roles: ["admin", "cashier", "owner"] },
+  { href: "/reports", label: "Laporan", icon: BarChart3, roles: ["admin"] },
+  { href: "/register", label: "Kasir", icon: CircleDollarSign, roles: ["admin", "cashier", "owner"] },
+  { href: "/settings", label: "Pengaturan", icon: Settings, roles: ["admin"] },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  standalone?: boolean
+}
+
+export function Sidebar({ standalone }: SidebarProps) {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const [collapsed, setCollapsed] = useState(false)
-  const isAdmin = session?.user?.role === "admin"
-  const navItems = allNavItems.filter((item) => !item.adminOnly || isAdmin)
+  const [collapsed, setCollapsed] = useState(true)
+  const [mounted, setMounted] = useState(false)
+  const { theme, setTheme } = useTheme()
+  const isDark = theme === "dark"
+
+  useEffect(() => { setMounted(true) }, [])
+  const role = session?.user?.role ?? ""
+  const navItems = allNavItems.filter((item) => item.roles.includes(role))
 
   return (
     <TooltipProvider delay={0}>
@@ -118,6 +131,114 @@ export function Sidebar() {
             return navItem
           })}
         </nav>
+
+        <div className="border-t border-sidebar-border p-2 space-y-0.5">
+          {!collapsed ? (
+            <div className="flex items-center gap-3 px-3 py-2">
+              <Avatar className="h-8 w-8 ring-2 ring-primary/15">
+                <AvatarFallback className="text-xs font-semibold bg-primary text-primary-foreground">
+                  {session?.user?.name?.charAt(0)?.toUpperCase() || "K"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold truncate leading-tight">{session?.user?.name || "User"}</p>
+                <p className="text-[11px] text-muted-foreground capitalize leading-tight">{session?.user?.role || ""}</p>
+              </div>
+            </div>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger>
+                <span className="flex items-center justify-center px-2 py-2">
+                  <Avatar className="h-8 w-8 ring-2 ring-primary/15">
+                    <AvatarFallback className="text-xs font-semibold bg-primary text-primary-foreground">
+                      {session?.user?.name?.charAt(0)?.toUpperCase() || "K"}
+                    </AvatarFallback>
+                  </Avatar>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="text-xs">
+                {session?.user?.name || "User"} ({session?.user?.role || "cashier"})
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {!collapsed ? (
+            <button
+              onClick={async () => {
+                await signOut({ redirect: false })
+                window.location.href = "/login"
+              }}
+              className="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 text-sidebar-foreground/60 hover:bg-destructive/10 hover:text-destructive"
+            >
+              <LogOut className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+              <span>Logout</span>
+            </button>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger>
+                <span
+                  onClick={async () => {
+                    await signOut({ redirect: false })
+                    window.location.href = "/login"
+                  }}
+                  className="flex w-full items-center justify-center rounded-lg px-2 py-2 text-sidebar-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-all duration-200 cursor-pointer"
+                >
+                  <LogOut className="h-5 w-5 shrink-0" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="text-xs">Logout</TooltipContent>
+            </Tooltip>
+          )}
+
+          {!mounted ? null : !collapsed ? (
+            <button
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              className="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+            >
+              {isDark ? <Sun className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110" /> : <Moon className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />}
+              <span>{isDark ? "Mode Terang" : "Mode Gelap"}</span>
+            </button>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger>
+                <span
+                  onClick={() => setTheme(isDark ? "light" : "dark")}
+                  className="flex w-full items-center justify-center rounded-lg px-2 py-2 text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-all duration-200 cursor-pointer"
+                >
+                  {isDark ? <Sun className="h-5 w-5 shrink-0" /> : <Moon className="h-5 w-5 shrink-0" />}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="text-xs">{isDark ? "Mode Terang" : "Mode Gelap"}</TooltipContent>
+            </Tooltip>
+          )}
+
+          {standalone && (
+            <>
+              {!collapsed ? (
+                <button
+                  onClick={() => window.close()}
+                  className="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                >
+                  <XCircle className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                  <span>Exit POS</span>
+                </button>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <span
+                      onClick={() => window.close()}
+                      className="flex w-full items-center justify-center rounded-lg px-2 py-2 text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-all duration-200 cursor-pointer"
+                    >
+                      <XCircle className="h-5 w-5 shrink-0" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="text-xs">Exit POS</TooltipContent>
+                </Tooltip>
+              )}
+            </>
+          )}
+
+        </div>
 
         <div className="border-t border-sidebar-border p-2">
           {collapsed ? (

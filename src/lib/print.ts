@@ -1,3 +1,31 @@
+const LOCAL_PRINT_AGENT_URL = "http://localhost:8090"
+
+export async function isLocalAgentAvailable(): Promise<boolean> {
+  try {
+    const res = await fetch(`${LOCAL_PRINT_AGENT_URL}/status`, {
+      signal: AbortSignal.timeout(3000),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+export async function sendToLocalPrinter(data: ThermalPrintPayload): Promise<boolean> {
+  try {
+    const res = await fetch(`${LOCAL_PRINT_AGENT_URL}/print`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+      signal: AbortSignal.timeout(30000),
+    })
+    return res.ok
+  } catch (err) {
+    console.error("Local print agent failed:", err)
+    return false
+  }
+}
+
 export function printReceipt(html: string) {
   const iframe = document.createElement("iframe")
   iframe.style.position = "absolute"

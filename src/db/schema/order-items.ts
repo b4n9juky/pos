@@ -9,6 +9,7 @@ export const orderItems = mysqlTable("order_items", {
   quantity: int("quantity").notNull(),
   unitPrice: decimal("unit_price", { precision: 12, scale: 0 }).notNull(),
   subtotal: decimal("subtotal", { precision: 12, scale: 0 }).notNull(),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("order_idx").on(table.orderId),

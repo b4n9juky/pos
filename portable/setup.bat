@@ -203,6 +203,18 @@ if exist "sql\schema.sql" (
 echo.
 call :color White "Membuat konfigurasi (.env)..."
 
+:: Detect LAN IP
+call :color White "  Mendeteksi IP lokal..."
+set "LAN_IP="
+for /f "usebackq delims=" %%a in (`powershell -NoProfile -Command "(Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notmatch '^(169\.254|127\.)' -and $_.PrefixOrigin -ne 'LinkLocal' } | Select-Object -First 1 -ExpandProperty IPAddress)" 2^>nul`) do set "LAN_IP=%%a"
+if defined LAN_IP (
+  call :color Green "  [OK] LAN IP: !LAN_IP!"
+  set "BASE_URL=http://!LAN_IP!:3000"
+) else (
+  call :color Yellow "  [INFO] Tidak terdeteksi, pakai localhost"
+  set "BASE_URL=http://localhost:3000"
+)
+
 :: Generate random AUTH_SECRET using PowerShell
 for /f "usebackq delims=" %%a in (`powershell -NoProfile -Command "$bytes = [byte[]]::new(48); $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create(); $rng.GetBytes($bytes); Write-Output ([Convert]::ToBase64String($bytes))"`) do set "AUTH_SECRET=%%a"
 if "!AUTH_SECRET!"=="" set "AUTH_SECRET=CHANGE_ME_TO_A_RANDOM_STRING"
@@ -210,8 +222,7 @@ if "!AUTH_SECRET!"=="" set "AUTH_SECRET=CHANGE_ME_TO_A_RANDOM_STRING"
 (
   echo DATABASE_URL=mysql://root:@localhost:3307/pos_db
   echo AUTH_SECRET=!AUTH_SECRET!
-  echo AUTH_URL=http://localhost:3000
-  echo NEXT_PUBLIC_APP_URL=http://localhost:3000
+  echo NEXT_PUBLIC_APP_URL=!BASE_URL!
 ) > ".env"
 call :color Green "  [OK] .env dibuat"
 
@@ -242,6 +253,23 @@ call :color White "Menghentikan MariaDB..."
 "!MARIA_DIR!\bin\!MYSQL_CLIENT!" -u root --port=3307 --host=127.0.0.1 --protocol=tcp -e "SHUTDOWN"
 ping -n 3 127.0.0.1 >nul
 call :color Green "  [OK] MariaDB berhenti"
+
+:: --- Allow ports through Windows Firewall ---
+call :color White "Mengizinkan port 3000 dan 8090 untuk akses LAN..."
+netsh advfirewall firewall delete rule name="POS Rahmat (TCP 3000)" >nul 2>&1
+netsh advfirewall firewall add rule name="POS Rahmat (TCP 3000)" dir=in action=allow protocol=TCP localport=3000 >nul 2>&1
+if %errorlevel% equ 0 (
+  call :color Green "  [OK] Firewall rule port 3000 ditambahkan"
+) else (
+  call :color Yellow "  [INFO] Gagal menambah firewall rule port 3000 (butuh Admin)"
+)
+netsh advfirewall firewall delete rule name="POS Rahmat (TCP 8090)" >nul 2>&1
+netsh advfirewall firewall add rule name="POS Rahmat (TCP 8090)" dir=in action=allow protocol=TCP localport=8090 >nul 2>&1
+if %errorlevel% equ 0 (
+  call :color Green "  [OK] Firewall rule port 8090 ditambahkan"
+) else (
+  call :color Yellow "  [INFO] Gagal menambah firewall rule port 8090 (butuh Admin)"
+)
 
 :: --- Set PowerShell execution policy ---
 echo.
@@ -274,6 +302,14 @@ call :color White "Cara menjalankan:"
 call :color White "  1. Double-click shortcut 'POS Rahmat' di desktop"
 call :color White "     atau start.bat di folder ini"
 echo.
+if defined LAN_IP (
+  call :color White "  Akses dari perangkat LAN lain:"
+  call :color Cyan "    http://!LAN_IP!:3000"
+  echo.
+  call :color White "  Untuk komputer kasir lain:"
+  call :color White "    Copy cashier.bat ke USB, jalankan, masukkan IP di atas."
+  echo.
+)
 call :color White "  Login:"
 call :color White "    Admin:  admin@pos.com / password"
 call :color White "    Kasir:  cashier@pos.com / password"

@@ -31,7 +31,7 @@ export function CartPanel() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div data-cart-scroll className="flex-1 overflow-y-auto">
       <div className="divide-y divide-border/50">
         <div className="flex items-center gap-4 px-5 max-md:px-4 py-2 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider bg-muted/20 sticky top-0 z-10">
           <span className="flex-1">{t("Product")}</span>

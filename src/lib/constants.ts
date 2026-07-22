@@ -9,6 +9,8 @@ export const ORDER_PREFIX = "INV"
 export const ROLES = {
   ADMIN: "admin" as const,
   CASHIER: "cashier" as const,
+  OWNER: "owner" as const,
+  WAREHOUSE: "warehouse" as const,
 }
 
 export const PAYMENT_METHODS = [

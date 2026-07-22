@@ -2,6 +2,7 @@
 
 import { db } from "@/db"
 import { products, categories } from "@/db/schema"
+import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { auth } from "@/lib/auth"
 
@@ -10,10 +11,17 @@ interface ImportRowError {
   errors: string[]
 }
 
+interface ImportRowWarning {
+  row: number
+  message: string
+}
+
 interface ImportResult {
   success: number
+  updated: number
   failed: number
   errors: ImportRowError[]
+  warnings: ImportRowWarning[]
 }
 
 function parseBool(val: unknown): boolean {
@@ -37,8 +45,8 @@ function parseString(val: unknown): string | null {
 
 export async function importProducts(rows: Record<string, unknown>[]): Promise<ImportResult> {
   const session = await auth()
-  if (session?.user?.role !== "admin") throw new Error("Unauthorized")
-  const result: ImportResult = { success: 0, failed: 0, errors: [] }
+  if (session?.user?.role !== "admin" && session?.user?.role !== "warehouse") throw new Error("Unauthorized")
+  const result: ImportResult = { success: 0, updated: 0, failed: 0, errors: [], warnings: [] }
 
   const allCategories = await db.select().from(categories)
   const categoryMap = new Map<string, number>()
@@ -46,10 +54,29 @@ export async function importProducts(rows: Record<string, unknown>[]): Promise<I
     categoryMap.set(c.name.toLowerCase(), c.id)
   }
 
-  const existingSkus = new Set<string>()
-  const existing = await db.select({ sku: products.sku }).from(products)
-  for (const p of existing) {
-    existingSkus.add(p.sku)
+  const sheetNames = [...new Set(rows.map((r) => parseString(r.__sheet)).filter(Boolean) as string[])]
+  for (const name of sheetNames) {
+    if (!categoryMap.has(name.toLowerCase())) {
+      const slug = name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
+      const [{ insertId }] = await db.insert(categories).values({ name, slug })
+      categoryMap.set(name.toLowerCase(), insertId)
+    }
+  }
+
+  const allProducts = await db.select({
+    id: products.id,
+    sku: products.sku,
+    barcode: products.barcode,
+    name: products.name,
+  }).from(products)
+
+  const existingBySku = new Map<string, number>()
+  const existingByBarcode = new Map<string, number>()
+  const existingByName = new Map<string, number>()
+  for (const p of allProducts) {
+    existingBySku.set(p.sku, p.id)
+    if (p.barcode) existingByBarcode.set(p.barcode, p.id)
+    existingByName.set(p.name.toLowerCase(), p.id)
   }
 
   for (let i = 0; i < rows.length; i++) {
@@ -62,7 +89,6 @@ export async function importProducts(rows: Record<string, unknown>[]): Promise<I
 
     const sku = parseString(row["SKU"])
     if (!sku) errors.push("SKU is required")
-    else if (existingSkus.has(sku)) errors.push(`SKU "${sku}" already exists`)
 
     const price = parseNumber(row["Price"])
     if (price == null) errors.push("Price is required and must be a number")
@@ -76,13 +102,19 @@ export async function importProducts(rows: Record<string, unknown>[]): Promise<I
     const minStock = parseNumber(row["Min Stock"])
 
     let categoryId: number | null = null
-    const catName = parseString(row["Category Name"])
-    if (catName) {
-      const found = categoryMap.get(catName.toLowerCase())
-      if (found) {
-        categoryId = found
-      } else {
-        errors.push(`Category "${catName}" not found`)
+    const sheetCat = parseString(row.__sheet)
+    if (sheetCat) {
+      const found = categoryMap.get(sheetCat.toLowerCase())
+      if (found) categoryId = found
+    } else {
+      const catName = parseString(row["Category Name"])
+      if (catName) {
+        const found = categoryMap.get(catName.toLowerCase())
+        if (found) {
+          categoryId = found
+        } else {
+          errors.push(`Category "${catName}" not found`)
+        }
       }
     }
 
@@ -95,8 +127,49 @@ export async function importProducts(rows: Record<string, unknown>[]): Promise<I
       continue
     }
 
+    const existingId = sku ? existingBySku.get(sku) : undefined
+    if (existingId != null) {
+      try {
+        await db.update(products).set({
+          name: name!,
+          barcode: barcode ?? null,
+          description: description ?? null,
+          price: String(Math.round(price!)),
+          costPrice: costPrice != null ? String(Math.round(costPrice)) : null,
+          stock: stockVal,
+          minStock: minStock ?? 5,
+          categoryId,
+          taxable,
+          active,
+          deletedAt: null,
+        }).where(eq(products.id, existingId))
+        result.warnings.push({ row: rowNum, message: `SKU "${sku}" already exists — updated` })
+        result.updated++
+        if (barcode) existingByBarcode.set(barcode, existingId)
+        if (name) existingByName.set(name.toLowerCase(), existingId)
+        continue
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Database error"
+        result.failed++
+        result.errors.push({ row: rowNum, errors: [msg] })
+        continue
+      }
+    }
+
+    if (barcode && existingByBarcode.has(barcode)) {
+      result.warnings.push({ row: rowNum, message: `Barcode "${barcode}" already used by another product — skipped` })
+      result.failed++
+      continue
+    }
+
+    if (name && existingByName.has(name.toLowerCase())) {
+      result.warnings.push({ row: rowNum, message: `Name "${name}" already exists — skipped` })
+      result.failed++
+      continue
+    }
+
     try {
-      await db.insert(products).values({
+      const [{ insertId }] = await db.insert(products).values({
         name: name!,
         sku: sku!,
         barcode: barcode ?? null,
@@ -109,7 +182,9 @@ export async function importProducts(rows: Record<string, unknown>[]): Promise<I
         taxable,
         active,
       })
-      existingSkus.add(sku!)
+      existingBySku.set(sku!, insertId)
+      if (barcode) existingByBarcode.set(barcode, insertId)
+      if (name) existingByName.set(name.toLowerCase(), insertId)
       result.success++
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Database error"
@@ -125,7 +200,7 @@ export async function importProducts(rows: Record<string, unknown>[]): Promise<I
 export async function importCategories(rows: Record<string, unknown>[]): Promise<ImportResult> {
   const session = await auth()
   if (session?.user?.role !== "admin") throw new Error("Unauthorized")
-  const result: ImportResult = { success: 0, failed: 0, errors: [] }
+  const result: ImportResult = { success: 0, updated: 0, failed: 0, errors: [], warnings: [] }
 
   const existingSlugs = new Set<string>()
   const existing = await db.select({ slug: categories.slug }).from(categories)
@@ -147,16 +222,29 @@ export async function importCategories(rows: Record<string, unknown>[]): Promise
     }
     if (!slug) errors.push("Slug is required (or auto-generated from name)")
 
-    if (slug && existingSlugs.has(slug)) {
-      errors.push(`Slug "${slug}" already exists`)
-    }
-
     const description = parseString(row["Description"])
 
     if (errors.length > 0) {
       result.failed++
       result.errors.push({ row: rowNum, errors })
       continue
+    }
+
+    if (slug && existingSlugs.has(slug)) {
+      try {
+        await db.update(categories).set({
+          name: name!,
+          description: description ?? null,
+        }).where(eq(categories.slug, slug))
+        result.warnings.push({ row: rowNum, message: `Slug "${slug}" already exists — updated` })
+        result.updated++
+        continue
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Database error"
+        result.failed++
+        result.errors.push({ row: rowNum, errors: [msg] })
+        continue
+      }
     }
 
     try {

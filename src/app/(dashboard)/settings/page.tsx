@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Store, User, Save, Percent, Plus, Edit, Printer, RotateCw, Building2, Receipt, Shield, Users as UsersIcon } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Store, User, Save, Percent, Plus, Edit, Printer, RotateCw, Building2, Receipt, Shield, Users as UsersIcon, Gem, Trash2, AlertTriangle, Database, Download, Upload } from "lucide-react"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -76,10 +76,25 @@ export default function SettingsPage() {
   const [printerPaperWidth, setPrinterPaperWidth] = useState(58)
   const [printerAutoCut, setPrinterAutoCut] = useState(true)
   const [printerEnabled, setPrinterEnabled] = useState(false)
+  const [printerConnectionType, setPrinterConnectionType] = useState("usb")
   const [savingPrinter, setSavingPrinter] = useState(false)
   const [detecting, setDetecting] = useState(false)
   const [detectedPrinters, setDetectedPrinters] = useState<string[]>([])
   const [testingPrint, setTestingPrint] = useState(false)
+
+  const [membershipEnabled, setMembershipEnabled] = useState(true)
+  const [membershipThreshold, setMembershipThreshold] = useState("50000")
+  const [pointsPerAmount, setPointsPerAmount] = useState("1")
+  const [pointsPerUnit, setPointsPerUnit] = useState("1000")
+  const [savingMembership, setSavingMembership] = useState(false)
+
+  const [resetDialog, setResetDialog] = useState(false)
+  const [resetting, setResetting] = useState(false)
+
+  const [restoreFile, setRestoreFile] = useState<File | null>(null)
+  const [restoreDialog, setRestoreDialog] = useState(false)
+  const [restoring, setRestoring] = useState(false)
+  const restoreInputRef = useRef<HTMLInputElement>(null)
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["settings"],
@@ -105,6 +120,10 @@ export default function SettingsPage() {
       setCurrency(settings.currency ?? "IDR")
       setReceiptFooter(settings.receiptFooter ?? "")
       setAutoPrint(settings.autoPrint ?? true)
+      setMembershipEnabled(settings.membershipEnabled ?? true)
+      setMembershipThreshold(String(settings.membershipThreshold ?? 50000))
+      setPointsPerAmount(String(settings.pointsPerAmount ?? 1))
+      setPointsPerUnit(String(settings.pointsPerUnit ?? 1000))
     }
   }, [settings])
 
@@ -126,6 +145,7 @@ export default function SettingsPage() {
           setPrinterPaperWidth(data.paperWidth ?? 58)
           setPrinterAutoCut(data.autoCut ?? true)
           setPrinterEnabled(data.enabled ?? false)
+          setPrinterConnectionType(data.connectionType ?? "usb")
         }
       })
       .catch(() => {})
@@ -135,18 +155,30 @@ export default function SettingsPage() {
     setDetecting(true)
     setDetectedPrinters([])
     try {
-      const res = await fetch("/api/print-receipt/detect", { signal: AbortSignal.timeout(10000) })
-      if (res.ok) {
-        const data = await res.json()
-        setDetectedPrinters(data.printers || [])
-        if (data.printers?.length === 0) {
-          toast.error(t("No printers found."))
+      let printers: string[] = []
+      if (printerConnectionType === "usb") {
+        const res = await fetch("http://localhost:8090/detect", { signal: AbortSignal.timeout(5000) })
+        if (res.ok) {
+          const data = await res.json()
+          printers = data.printers || []
+        } else {
+          toast.error(t("Local print agent not responding. Run start-agent.bat"))
         }
       } else {
-        toast.error(t("Failed to detect printers"))
+        const res = await fetch("/api/print-receipt/detect", { signal: AbortSignal.timeout(10000) })
+        if (res.ok) {
+          const data = await res.json()
+          printers = data.printers || []
+        } else {
+          toast.error(t("Failed to detect printers"))
+        }
+      }
+      setDetectedPrinters(printers)
+      if (printers.length === 0) {
+        toast.error(t("No printers found."))
       }
     } catch {
-      toast.error(t("Failed to detect printers. Make sure the server is running."))
+      toast.error(t("Failed to detect printers"))
     } finally {
       setDetecting(false)
     }
@@ -159,13 +191,25 @@ export default function SettingsPage() {
     }
     setTestingPrint(true)
     try {
-      const res = await fetch("/api/print-receipt/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ printerName, paperWidth: printerPaperWidth }),
-        signal: AbortSignal.timeout(30000),
-      })
-      if (res.ok) {
+      let ok = false
+      if (printerConnectionType === "usb") {
+        const res = await fetch("http://localhost:8090/test", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ printerName, paperWidth: printerPaperWidth }),
+          signal: AbortSignal.timeout(30000),
+        })
+        ok = res.ok
+      } else {
+        const res = await fetch("/api/print-receipt/test", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ printerName, paperWidth: printerPaperWidth }),
+          signal: AbortSignal.timeout(30000),
+        })
+        ok = res.ok
+      }
+      if (ok) {
         toast.success(t("Test print sent!"))
       } else {
         toast.error(t("Test print failed"))
@@ -185,7 +229,7 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           printerName: printerName || null,
-          connectionType: "usb",
+          connectionType: printerConnectionType,
           paperWidth: printerPaperWidth,
           autoCut: printerAutoCut,
           enabled: printerEnabled,
@@ -225,6 +269,37 @@ export default function SettingsPage() {
       toast.error(t("Failed to save settings"))
     } finally {
       setSavingStore(false)
+    }
+  }
+
+  const handleSaveMembership = async () => {
+    setSavingMembership(true)
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeName,
+          storeAddress: storeAddress || null,
+          storePhone: storePhone || null,
+          storeEmail: storeEmail || null,
+          taxRate: Number(taxRate),
+          currency,
+          receiptFooter: receiptFooter || null,
+          autoPrint,
+          membershipEnabled,
+          membershipThreshold: Number(membershipThreshold),
+          pointsPerAmount: Number(pointsPerAmount),
+          pointsPerUnit: Number(pointsPerUnit),
+        }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success(t("Membership settings saved"))
+      queryClient.invalidateQueries({ queryKey: ["settings"] })
+    } catch {
+      toast.error(t("Failed to save membership settings"))
+    } finally {
+      setSavingMembership(false)
     }
   }
 
@@ -299,6 +374,43 @@ export default function SettingsPage() {
       toast.error(t("Failed to save user"))
     } finally {
       setSavingUser(false)
+    }
+  }
+
+  const handleReset = async () => {
+    setResetting(true)
+    try {
+      const res = await fetch("/api/reset", { method: "POST" })
+      if (!res.ok) throw new Error()
+      toast.success(t("Data reset successfully"))
+      queryClient.invalidateQueries({ queryKey: ["products"] })
+      queryClient.invalidateQueries({ queryKey: ["orders"] })
+      queryClient.invalidateQueries({ queryKey: ["reports"] })
+      setResetDialog(false)
+    } catch {
+      toast.error(t("Reset failed"))
+    } finally {
+      setResetting(false)
+    }
+  }
+
+  const handleRestore = async () => {
+    if (!restoreFile) return
+    setRestoring(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", restoreFile)
+      const res = await fetch("/api/backup/restore", { method: "POST", body: formData })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Unknown error")
+      toast.success(t("Database restored successfully"))
+      setRestoreDialog(false)
+      setRestoreFile(null)
+      queryClient.invalidateQueries()
+    } catch (e: any) {
+      toast.error(e.message || t("Failed to restore database"))
+    } finally {
+      setRestoring(false)
     }
   }
 
@@ -479,6 +591,40 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">{t("Connection Type")}</Label>
+              <div className="flex gap-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    id="conn-usb"
+                    name="connectionType"
+                    value="usb"
+                    checked={printerConnectionType === "usb"}
+                    onChange={() => setPrinterConnectionType("usb")}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="conn-usb" className="text-sm font-normal">
+                    {t("USB (Local Printer via Print Agent)")}
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    id="conn-network"
+                    name="connectionType"
+                    value="network"
+                    checked={printerConnectionType === "network"}
+                    onChange={() => setPrinterConnectionType("network")}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="conn-network" className="text-sm font-normal">
+                    {t("Network (Shared via Server)")}
+                  </Label>
+                </div>
+              </div>
+            </div>
+
             <div className="flex gap-2">
               <Button onClick={handleSavePrinter} disabled={savingPrinter} className="shadow-sm">
                 <Save className="mr-2 h-4 w-4" />
@@ -488,6 +634,138 @@ export default function SettingsPage() {
                 {testingPrint ? <RotateCw className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
                 {t("Test Print")}
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm border-muted/80">
+          <CardHeader>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 dark:bg-rose-950/30">
+                <Gem className="h-4 w-4 text-rose-600" />
+              </div>
+              <CardTitle className="text-base">{t("Membership Settings")}</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Switch id="membership-enabled" checked={membershipEnabled} onCheckedChange={setMembershipEnabled} />
+              <Label htmlFor="membership-enabled" className="text-sm font-medium">{t("Enable membership points")}</Label>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="membership-threshold" className="text-sm font-medium">{t("Min. Purchase (Rp)")}</Label>
+                <Input id="membership-threshold" type="number" value={membershipThreshold} onChange={(e) => setMembershipThreshold(e.target.value)} placeholder="50000" />
+                <p className="text-[11px] text-muted-foreground">{t("Minimum subtotal to earn points")}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="points-per-unit" className="text-sm font-medium">{t("Points per Rp")}</Label>
+                <Input id="points-per-unit" type="number" value={pointsPerUnit} onChange={(e) => setPointsPerUnit(e.target.value)} placeholder="1000" />
+                <p className="text-[11px] text-muted-foreground">{t("Every Rp X spent")}</p>
+              </div>
+            </div>
+            <div className="space-y-2 max-w-[calc(50%-0.5rem)]">
+              <Label htmlFor="points-per-amount" className="text-sm font-medium">{t("Points per Unit")}</Label>
+              <Input id="points-per-amount" type="number" value={pointsPerAmount} onChange={(e) => setPointsPerAmount(e.target.value)} placeholder="1" />
+              <p className="text-[11px] text-muted-foreground">{t("Number of points earned per unit")}</p>
+            </div>
+            <Button onClick={handleSaveMembership} disabled={savingMembership} className="shadow-sm">
+              <Save className="mr-2 h-4 w-4" />
+              {savingMembership ? t("Saving...") : t("Save Membership Settings")}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {session?.user?.role === "admin" && (
+          <Card className="shadow-sm border-destructive/30 border-2">
+            <CardHeader>
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </div>
+                <CardTitle className="text-base text-destructive">{t("Reset product & order data")}</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                {t("This will hide all products and orders from the system. The data stays in the database and can be restored by an admin.")}
+              </p>
+              <Button variant="destructive" onClick={() => setResetDialog(true)} className="shadow-sm">
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                {t("Reset Data")}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="shadow-sm border-muted/80">
+          <CardHeader>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 dark:bg-sky-950/30">
+                <Database className="h-4 w-4 text-sky-600" />
+              </div>
+              <CardTitle className="text-base">{t("Backup Database")}</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              {t("Download a SQL dump of the entire database for safekeeping.")}
+            </p>
+            <a
+              href="/api/backup"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow-sm hover:bg-primary/90 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              {t("Download Backup")}
+            </a>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm border-muted/80">
+          <CardHeader>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-950/30">
+                <Upload className="h-4 w-4 text-orange-600" />
+              </div>
+              <CardTitle className="text-base">{t("Restore Database")}</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              {t("Upload a previously downloaded SQL backup to restore the database.")}
+            </p>
+            <div className="flex flex-col gap-3">
+              <input
+                ref={restoreInputRef}
+                type="file"
+                accept=".sql"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null
+                  setRestoreFile(f)
+                }}
+              />
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => restoreInputRef.current?.click()}
+                  className="shadow-sm"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {restoreFile ? restoreFile.name : t("Select SQL file")}
+                </Button>
+                {restoreFile && (
+                  <Button
+                    variant="destructive"
+                    onClick={() => setRestoreDialog(true)}
+                    disabled={restoring}
+                    className="shadow-sm"
+                  >
+                    <AlertTriangle className="mr-2 h-4 w-4" />
+                    {restoring ? t("Restoring...") : t("Restore")}
+                  </Button>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -571,6 +849,50 @@ export default function SettingsPage() {
         </Card>
       </div>
 
+      <Dialog open={resetDialog} onOpenChange={setResetDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              {t("Reset product & order data")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("This will hide all products and orders from the system. The data stays in the database and can be restored by an admin.")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetDialog(false)} disabled={resetting}>
+              {t("Cancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleReset} disabled={resetting}>
+              {resetting ? t("Resetting...") : t("Reset Data")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={restoreDialog} onOpenChange={setRestoreDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              {t("Restore Database")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("This will replace ALL current data with the data from the backup file.")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRestoreDialog(false)} disabled={restoring}>
+              {t("Cancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleRestore} disabled={restoring}>
+              {restoring ? t("Restoring...") : t("Restore")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={userDialog} onOpenChange={setUserDialog}>
         <DialogContent>
           <DialogHeader>
@@ -602,6 +924,7 @@ export default function SettingsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="cashier">{t("Cashier")}</SelectItem>
+                  <SelectItem value="warehouse">{t("Gudang")}</SelectItem>
                   <SelectItem value="admin">{t("Admin")}</SelectItem>
                 </SelectContent>
               </Select>

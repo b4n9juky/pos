@@ -1,8 +1,8 @@
 "use server"
 
 import { db } from "@/db"
-import { orders, orderItems, products, customers, users } from "@/db/schema"
-import { eq, desc, like, or, and, sql } from "drizzle-orm"
+import { orders, orderItems, products, customers, users, storeSettings } from "@/db/schema"
+import { eq, desc, like, or, and, sql, isNull } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { randomInt } from "node:crypto"
@@ -54,23 +54,21 @@ function getOrdersBaseQuery() {
 
 export async function getOrders(search?: string, limit = 50, offset = 0, userId?: number) {
   const base = getOrdersBaseQuery().orderBy(desc(orders.createdAt))
-  const conditions = []
+  const conditions = [isNull(orders.deletedAt)]
   if (search) {
     const q = `%${search}%`
-    conditions.push(or(like(orders.orderNumber, q), like(customers.name, q)))
+    const searchCond = or(like(orders.orderNumber, q), like(customers.name, q))
+    if (searchCond) conditions.push(searchCond)
   }
   if (userId) {
     conditions.push(eq(orders.userId, userId))
   }
-  if (conditions.length > 0) {
-    return base.where(and(...conditions)).limit(limit).offset(offset)
-  }
-  return base.limit(limit).offset(offset)
+  return base.where(and(...conditions)).limit(limit).offset(offset)
 }
 
 export async function getOrder(id: number) {
   const order = await getOrdersBaseQuery()
-    .where(eq(orders.id, id))
+    .where(and(eq(orders.id, id), isNull(orders.deletedAt)))
     .then((r) => r[0])
 
   if (!order) return null
@@ -88,7 +86,7 @@ export async function getOrder(id: number) {
     })
     .from(orderItems)
     .leftJoin(products, eq(orderItems.productId, products.id))
-    .where(eq(orderItems.orderId, id))
+    .where(and(eq(orderItems.orderId, id), isNull(orderItems.deletedAt)))
 
   return { ...order, items }
 }
@@ -133,6 +131,29 @@ export async function createOrder(data: z.infer<typeof createOrderSchema>) {
         .where(eq(products.id, item.productId))
     )
   )
+
+  if (parsed.customerId !== null) {
+    const membership = await db
+      .select({
+        membershipEnabled: storeSettings.membershipEnabled,
+        membershipThreshold: storeSettings.membershipThreshold,
+        pointsPerAmount: storeSettings.pointsPerAmount,
+        pointsPerUnit: storeSettings.pointsPerUnit,
+      })
+      .from(storeSettings)
+      .limit(1)
+      .then((r) => r[0])
+
+    if (membership?.membershipEnabled && parsed.subtotal >= membership.membershipThreshold) {
+      const pointsEarned = Math.floor(parsed.subtotal / membership.pointsPerUnit) * membership.pointsPerAmount
+      if (pointsEarned > 0) {
+        await db
+          .update(customers)
+          .set({ loyaltyPoints: sql`loyalty_points + ${pointsEarned}` })
+          .where(eq(customers.id, parsed.customerId))
+      }
+    }
+  }
 
   revalidatePath("/orders")
   revalidatePath("/products")

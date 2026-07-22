@@ -39,7 +39,15 @@ export default function LoginPage() {
         redirect: false,
       })
       if (result?.ok) {
-        router.push("/pos")
+        const res = await fetch("/api/auth/session")
+        const session = await res.json()
+        router.push(
+          session?.user?.role === "warehouse"
+            ? "/products"
+            : session?.user?.role === "owner"
+              ? "/dashboard"
+              : "/pos"
+        )
         router.refresh()
       } else {
         toast.error(t("Invalid email or password"))

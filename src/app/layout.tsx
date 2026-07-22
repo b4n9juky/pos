@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import localFont from "next/font/local"
 import { ThemeProvider } from "@/providers/theme-provider"
 import { QueryProvider } from "@/providers/query-provider"
 import { SessionProvider } from "@/providers/session-provider"
@@ -7,14 +7,16 @@ import { CartProvider } from "@/hooks/use-cart"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
-const geistSans = Geist({
+const geistSans = localFont({
+  src: "../fonts/Geist-Variable.woff2",
   variable: "--font-sans",
-  subsets: ["latin"],
+  display: "swap",
 })
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "../fonts/GeistMono-Variable.woff2",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 })
 
 export const metadata: Metadata = {

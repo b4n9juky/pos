@@ -115,7 +115,7 @@ Batch files in `portable/` (synced to `dist/` by `tools/build-portable.ps1`):
 3. **Cleanup on reinstall**: `setup.bat` kills existing MariaDB processes and cleans `data\mysql\` before re-initializing.
 4. **`s start command fix**: Replaced fragile `start /MIN cmd /c "cd /d && ..."` pattern with temp batch file (`%TEMP%\pos-start-{app,print}.bat`) to avoid quoting/parsing issues.
 5. **Don't kill all node.exe**: `start.bat` no longer runs `taskkill /f /im node.exe` (was killing unrelated Node processes).
-6. **AUTH_URL fix**: Generated `.env` now includes `AUTH_URL=http://localhost:3000` — required by NextAuth v5 for correct logout redirects. Without it, redirect defaults to `http://0.0.0.0:3000`.
+6. **AUTH_URL removed**: `AUTH_URL` is no longer set in `.env`. NextAuth v5 has `trustHost: true`, so callback URLs use the request's Host header. This makes login work from any LAN IP without reconfiguring when IPs change. Previously `AUTH_URL` hardcoded the LAN IP, breaking login when IPs changed or from different hosts.
 7. **`.env` validation**: `start.bat` exits with error if `.env` is missing.
 8. **Error log tail**: If MariaDB fails to start, error shows the last 10 lines from `data\mysql\*.err` + `netstat` port check. If Next.js fails, shows last 10 lines of `app\server.log`.
 
@@ -124,3 +124,135 @@ Batch files in `portable/` (synced to `dist/` by `tools/build-portable.ps1`):
 - MariaDB 11.7.2 portable (ZIP) extracted to `mariadb/`
 - `setup.bat` must be run as Administrator before first use
 - Ports: 3000 (app), 3307 (MariaDB), 8090 (print server)
+
+## Docker deployment
+
+| File | Purpose |
+|------|---------|
+| `Dockerfile` | Multi-stage build for Next.js standalone |
+| `docker-compose.yml` | MariaDB + App services |
+| `.dockerignore` | Exclude unnecessary files from build context |
+| `scripts/docker-entrypoint.sh` | Entrypoint: auto-migrate + optional seed + start server |
+| `scripts/migrate.mjs` | Drizzle migration runner (uses `drizzle-orm/mysql2/migrator`) |
+| `scripts/seed.mjs` | Seed script (plain JS, uses `mysql2` + `bcryptjs`) |
+
+### Docker commands
+
+```sh
+# Build & run
+docker compose build
+docker compose up -d
+
+# First deploy with seed data
+DB_SEED=true docker compose up -d
+
+# Rebuild after code changes
+docker compose build --no-cache app
+docker compose up -d
+
+# View logs
+docker compose logs -f app
+
+# Run migrations manually
+docker compose exec app node scripts/migrate.mjs
+
+# Run seed manually
+docker compose exec app node scripts/seed.mjs
+
+# Access DB shell
+docker compose exec db mariadb -uroot -p${DB_PASSWORD} pos_rahmat
+```
+
+### Environment variables (set in `.env` or Portainer)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DB_PASSWORD` | Yes | MariaDB root password |
+| `AUTH_SECRET` | Yes | NextAuth JWT secret (min 32 chars) |
+| `APP_URL` | Yes | Public URL of the app (e.g. `https://pos.berkahutama.web.id`) |
+| `DB_SEED` | No | Set to `true` to seed demo data on first deploy |
+| `DB_MIGRATE` | No | Set to `false` to skip auto-migration (default `true`) |
+
+### Nginx integration (dengan existing nginx)
+
+Pos-rahmat tidak pakai nginx sendiri. Gunakan nginx yang sudah ada (yang handle apps lain).
+
+**1. Hubungkan existing nginx ke network `pos-network`**
+
+Di Portainer: container nginx existing → **Network** → Join `pos-network`
+
+Atau via command:
+```sh
+docker network connect pos-network <existing-nginx-container>
+```
+
+**2. Tambah server block ke nginx existing**
+
+Copy dari `nginx/nginx.conf` — atau tambah manual:
+
+```nginx
+server {
+    listen 80;
+    server_name pos.berkahutama.web.id;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name pos.berkahutama.web.id;
+
+    ssl_certificate     /etc/letsencrypt/live/pos.berkahutama.web.id/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/pos.berkahutama.web.id/privkey.pem;
+
+    location / {
+        proxy_pass http://pos-app:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+**3. Reload nginx**
+
+```sh
+docker exec <existing-nginx-container> nginx -s reload
+```
+
+**4. SSL certificate**
+
+Jika nginx existing sudah handle SSL untuk domain lain, bisa pakai certbot yang sama atau diurus sesuai setup yang sudah berjalan. Domain `pos.berkahutama.web.id` bisa ditambah ke certbot yang sudah ada.
+
+### Portainer deploy steps
+
+1. Push code changes to GitHub:
+   ```sh
+   git add .
+   git commit -m "update"
+   git push
+   ```
+2. In Portainer: **Stacks → Add Stack**
+3. Name: `pos-rahmat`
+4. **Build method**: select **Git Repository**
+5. Repository URL: `https://github.com/username/pos-rahmat`
+6. Branch: `main` (or your default branch)
+7. Compose path: `docker-compose.yml`
+8. Add environment variables (set via Portainer UI):
+   - `DB_PASSWORD` — MariaDB root password
+   - `AUTH_SECRET` — NextAuth JWT secret (min 32 chars)
+   - `APP_URL` — e.g. `https://pos.berkahutama.web.id`
+   - `DB_SEED` — set to `true` only on first deploy
+9. **Deploy the stack**
+
+Portainer will clone the repo, build the image using the `Dockerfile`, and create all containers (db, app). For subsequent updates, use **Stack → Re-pull and redeploy** after pushing new code.
+
+### Printing in Docker
+
+Printer USB terhubung ke PC kasir (bukan server). Alur printing:
+
+1. PC kasir jalankan `print-server/start-agent.bat` (PowerShell, tanpa Node.js)
+2. Browser di PC kasir → `http://localhost:8090` → print-server → winspool → printer
+3. Fallback: browser `window.print()` jika print-server tidak tersedia
+
+Tidak ada perubahan kode — `src/lib/print.ts` sudah pakai `http://localhost:8090` yang mengacu ke localhost browser (PC kasir).

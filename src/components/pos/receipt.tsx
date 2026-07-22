@@ -38,12 +38,14 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(
         <div className="border-b pb-1 mb-1">
           <div className="flex justify-between font-medium">
             <span className="flex-1">{t("Item")}</span>
+            <span className="w-16 text-right">{t("Price")}</span>
             <span className="w-12 text-right">{t("Qty")}</span>
             <span className="w-16 text-right">{t("Total")}</span>
           </div>
           {items.map((item) => (
             <div key={item.product.id} className="flex justify-between">
               <span className="flex-1 truncate">{item.product.name}</span>
+              <span className="w-16 text-right">{formatCurrency(item.product.price)}</span>
               <span className="w-12 text-right">{item.quantity}</span>
               <span className="w-16 text-right">{formatCurrency(item.product.price * item.quantity)}</span>
             </div>

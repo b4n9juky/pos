@@ -29,6 +29,27 @@
       "when": 1784245281419,
       "tag": "0003_icy_ender_wiggin",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1784427941814,
+      "tag": "0004_complex_winter_soldier",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1784532731480,
+      "tag": "0005_bumpy_whiplash",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1784535815757,
+      "tag": "0006_young_george_stacy",
+      "breakpoints": true
     }
   ]
 }

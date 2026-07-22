@@ -46,25 +46,34 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       }
     }
     case "SET_DISCOUNT":
-      return { ...state, discount: Math.max(0, action.discount) }
+      return { ...state, discount: Math.max(0, Math.min(100, action.discount)) }
     case "CLEAR_CART":
       return { items: [], discount: 0 }
     case "LOAD_CART":
-      return { items: action.items, discount: action.discount }
+      return { items: action.items, discount: Math.max(0, Math.min(100, action.discount)) }
     default:
       return state
   }
 }
 
+interface MembershipSettings {
+  membershipEnabled: boolean
+  membershipThreshold: number
+  pointsPerAmount: number
+  pointsPerUnit: number
+}
+
 interface CartContextValue {
   items: CartItem[]
   discount: number
+  discountAmount: number
   subtotal: number
   taxableSubtotal: number
   tax: number
   total: number
   itemCount: number
   taxRate: number
+  membershipSettings: MembershipSettings
   addItem: (product: Product) => void
   removeItem: (productId: number) => void
   updateQuantity: (productId: number, quantity: number) => void
@@ -78,12 +87,34 @@ const CartContext = createContext<CartContextValue | null>(null)
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { items: [], discount: 0 })
   const [taxRate, setTaxRate] = useState(10)
+  const [membershipSettings, setMembershipSettings] = useState<MembershipSettings>({
+    membershipEnabled: true,
+    membershipThreshold: 50000,
+    pointsPerAmount: 1,
+    pointsPerUnit: 1000,
+  })
 
   useEffect(() => {
     fetch("/api/tax-settings/default")
       .then((r) => r.json())
       .then((data) => {
         if (data?.rate != null) setTaxRate(data.rate)
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data) {
+          setMembershipSettings({
+            membershipEnabled: data.membershipEnabled ?? true,
+            membershipThreshold: data.membershipThreshold ?? 50000,
+            pointsPerAmount: data.pointsPerAmount ?? 1,
+            pointsPerUnit: data.pointsPerUnit ?? 1000,
+          })
+        }
       })
       .catch(() => {})
   }, [])
@@ -103,7 +134,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return sum + (item.product.price * item.quantity * (rate / 100));
     }, 0))
   }, [state.items, taxRate])
-  const total = useMemo(() => Math.max(0, subtotal + tax - state.discount), [subtotal, tax, state.discount])
+  const discountAmount = useMemo(
+    () => Math.round(subtotal * state.discount / 100),
+    [subtotal, state.discount]
+  )
+  const total = useMemo(() => Math.max(0, subtotal + tax - discountAmount), [subtotal, tax, discountAmount])
   const itemCount = useMemo(() => state.items.reduce((sum, item) => sum + item.quantity, 0), [state.items])
 
   const addItem = useCallback((product: Product) => {
@@ -134,12 +169,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     () => ({
       items: state.items,
       discount: state.discount,
+      discountAmount,
       subtotal,
       taxableSubtotal,
       tax,
       total,
       itemCount,
       taxRate,
+      membershipSettings,
       addItem,
       removeItem,
       updateQuantity,
@@ -147,7 +184,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       clearCart,
       loadCart,
     }),
-    [state.items, state.discount, subtotal, taxableSubtotal, tax, total, itemCount, taxRate, loadCart]
+    [state.items, state.discount, discountAmount, subtotal, taxableSubtotal, tax, total, itemCount, taxRate, membershipSettings, loadCart]
   )
 
   return (

@@ -15,6 +15,7 @@ export const orders = mysqlTable("orders", {
   paymentStatus: varchar("payment_status", { length: 20 }).notNull().default("paid"),
   status: varchar("status", { length: 20 }).notNull().default("completed"),
   notes: text("notes"),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 }, (table) => [

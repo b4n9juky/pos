@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Plus, Search, Package, Edit, MoreHorizontal, EyeOff, ChevronLeft, ChevronRight, Upload, Box } from "lucide-react"
+import { Plus, Search, Package, Edit, MoreHorizontal, EyeOff, Eye, Trash2, ChevronLeft, ChevronRight, Upload, Barcode, AlertTriangle } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
@@ -33,8 +33,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 const PAGE_SIZE = 50
+type StatusFilter = "all" | "active" | "inactive"
 
 export default function ProductsPage() {
   const router = useRouter()
@@ -42,21 +51,41 @@ export default function ProductsPage() {
   const [search, setSearch] = useState("")
   const { data: session } = useSession()
   const isAdmin = session?.user?.role === "admin"
+  const canWrite = isAdmin || session?.user?.role === "warehouse"
   const [importOpen, setImportOpen] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const debouncedSearch = useDebounce(search, 200)
   const [page, setPage] = useState(0)
+
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean
+    title: string
+    description: string
+    confirmLabel: string
+    variant?: "destructive" | "default"
+    action: () => Promise<void>
+  } | null>(null)
 
   const offset = page * PAGE_SIZE
   const limit = PAGE_SIZE + 1
 
+  const activeParam = statusFilter === "all" ? undefined : statusFilter === "active" ? "true" : "false"
+
   const { data: rawProducts = [], isLoading } = useQuery({
-    queryKey: ["products", debouncedSearch, page],
+    queryKey: ["products", debouncedSearch, page, statusFilter],
     queryFn: () =>
-      fetch(`/api/products?limit=${limit}&offset=${offset}${debouncedSearch ? `&search=${debouncedSearch}` : ""}`).then((r) => r.json()),
+      fetch(`/api/products?limit=${limit}&offset=${offset}${debouncedSearch ? `&search=${debouncedSearch}` : ""}${activeParam ? `&active=${activeParam}` : ""}`).then((r) => r.json()),
   })
 
   const hasMore = rawProducts.length > PAGE_SIZE
   const products = hasMore ? rawProducts.slice(0, PAGE_SIZE) : rawProducts
+
+  const handleFilterChange = useCallback((filter: StatusFilter) => {
+    setStatusFilter(filter)
+    setPage(0)
+  }, [])
+
+  const closeConfirm = useCallback(() => setConfirmDialog(null), [])
 
   return (
     <DashboardShell title={t("Products")}>
@@ -74,7 +103,7 @@ export default function ProductsPage() {
               className="pl-9 h-9"
             />
           </div>
-          {isAdmin && (
+          {canWrite && (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => setImportOpen(true)} className="h-9">
                 <Upload className="mr-2 h-4 w-4" />
@@ -88,6 +117,23 @@ export default function ProductsPage() {
           )}
         </div>
 
+        <div className="flex items-center gap-1">
+          {(["all", "active", "inactive"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => handleFilterChange(f)}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
+                statusFilter === f
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+            >
+              {f === "all" ? t("All") : f === "active" ? t("Active") : t("Inactive")}
+            </button>
+          ))}
+        </div>
+
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
           <Table>
             <TableHeader>
@@ -99,13 +145,13 @@ export default function ProductsPage() {
                 <TableHead className="text-right font-medium">{t("Cost")}</TableHead>
                 <TableHead className="text-right font-medium">{t("Stock")}</TableHead>
                 <TableHead className="font-medium">{t("Status")}</TableHead>
-                {isAdmin && <TableHead className="w-12"></TableHead>}
+                {canWrite && <TableHead className="w-12"></TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-12">
+                  <TableCell colSpan={canWrite ? 8 : 7} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <div className="flex items-center gap-2">
                         <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -134,11 +180,14 @@ export default function ProductsPage() {
                   <TableRow key={product.id} className="group hover:bg-muted/20 transition-colors">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-b from-muted/60 to-muted/30 group-hover:from-primary/5 group-hover:to-primary/10 transition-colors">
+                        <div className={cn(
+                          "flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-b from-muted/60 to-muted/30 group-hover:from-primary/5 group-hover:to-primary/10 transition-colors",
+                          !product.active && "opacity-50"
+                        )}>
                           <Package className="h-4 w-4 text-muted-foreground/50" />
                         </div>
                         <div>
-                          <p className="font-medium text-sm">{product.name}</p>
+                          <p className={cn("font-medium text-sm", !product.active && "text-muted-foreground")}>{product.name}</p>
                           {product.barcode && (
                             <p className="text-[11px] text-muted-foreground font-mono">{product.barcode}</p>
                           )}
@@ -166,13 +215,13 @@ export default function ProductsPage() {
                         {product.active ? t("Active") : t("Inactive")}
                       </Badge>
                     </TableCell>
-                    {isAdmin && (
+                    {canWrite && (
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger className="inline-flex shrink-0 items-center justify-center rounded-md h-8 w-8 hover:bg-muted transition-colors">
                             <MoreHorizontal className="h-4 w-4" />
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuContent align="end" className="w-44">
                             <DropdownMenuGroup>
                               <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{t("Actions")}</DropdownMenuLabel>
                             </DropdownMenuGroup>
@@ -181,22 +230,86 @@ export default function ProductsPage() {
                               <Edit className="h-4 w-4" />
                               {t("Edit")}
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              className="text-sm gap-2 text-destructive focus:text-destructive"
-                              onClick={async () => {
-                                const res = await fetch(`/api/products/${product.id}`, { method: "DELETE" })
-                                if (res.ok) {
-                                  toast.success(t("Product deactivated"))
-                                  queryClient.invalidateQueries({ queryKey: ["products"] })
-                                } else {
-                                  toast.error(t("Failed to deactivate product"))
-                                }
-                              }}
+                              onClick={() => router.push(
+                                `/products/barcode-print?name=${encodeURIComponent(product.name)}&sku=${encodeURIComponent(product.sku)}&price=${encodeURIComponent(product.price || "")}&barcode=${encodeURIComponent(product.barcode || "")}`
+                              )}
+                              className="text-sm gap-2"
                             >
-                              <EyeOff className="h-4 w-4" />
-                              {t("Deactivate")}
+                              <Barcode className="h-4 w-4" />
+                              Print Barcode
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {product.active ? (
+                              <DropdownMenuItem
+                                className="text-sm gap-2 text-destructive focus:text-destructive"
+                                onClick={() =>
+                                  setConfirmDialog({
+                                    open: true,
+                                    title: t("Deactivate product"),
+                                    description: t("Are you sure you want to deactivate") + ` "${product.name}"? ${t("It will be hidden from POS.")}`,
+                                    confirmLabel: t("Deactivate"),
+                                    variant: "destructive",
+                                    action: async () => {
+                                      const res = await fetch(`/api/products/${product.id}`, { method: "DELETE" })
+                                      if (!res.ok) {
+                                        const err = await res.json().catch(() => ({}))
+                                        throw new Error(err.error || t("Failed to deactivate product"))
+                                      }
+                                    },
+                                  })
+                                }
+                              >
+                                <EyeOff className="h-4 w-4" />
+                                {t("Deactivate")}
+                              </DropdownMenuItem>
+                            ) : (
+                              <>
+                                <DropdownMenuItem
+                                  className="text-sm gap-2"
+                                  onClick={() =>
+                                    setConfirmDialog({
+                                      open: true,
+                                      title: t("Reactivate product"),
+                                      description: t("Are you sure you want to reactivate") + ` "${product.name}"? ${t("It will be available in POS again.")}`,
+                                      confirmLabel: t("Reactivate"),
+                                      action: async () => {
+                                        const res = await fetch(`/api/products/${product.id}`, { method: "POST" })
+                                        if (!res.ok) {
+                                          const err = await res.json().catch(() => ({}))
+                                          throw new Error(err.error || t("Failed to reactivate product"))
+                                        }
+                                      },
+                                    })
+                                  }
+                                >
+                                  <Eye className="h-4 w-4" />
+                                  {t("Reactivate")}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-sm gap-2 text-destructive focus:text-destructive"
+                                  onClick={() =>
+                                    setConfirmDialog({
+                                      open: true,
+                                      title: t("Delete product"),
+                                      description: t("Are you sure you want to delete") + ` "${product.name}"? ${t("The product will be hidden from the system and can be restored later.")}`,
+                                      confirmLabel: t("Delete"),
+                                      variant: "destructive",
+                                      action: async () => {
+                                        const res = await fetch(`/api/products/${product.id}?hard=true`, { method: "DELETE" })
+                                        if (!res.ok) {
+                                          const err = await res.json().catch(() => ({}))
+                                          throw new Error(err.error || t("Failed to delete product"))
+                                        }
+                                      },
+                                    })
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  {t("Delete")}
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -228,7 +341,7 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {isAdmin && (
+      {canWrite && (
         <ImportModal
           open={importOpen}
           onOpenChange={setImportOpen}
@@ -238,6 +351,56 @@ export default function ProductsPage() {
           onSuccess={() => queryClient.invalidateQueries({ queryKey: ["products"] })}
         />
       )}
+
+      <Dialog
+        open={confirmDialog?.open ?? false}
+        onOpenChange={(open) => {
+          if (!open) closeConfirm()
+        }}
+      >
+        <DialogContent className="sm:max-w-md" showCloseButton={false}>
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                confirmDialog?.variant === "destructive" ? "bg-destructive/10" : "bg-primary/10"
+              )}>
+                <AlertTriangle className={cn(
+                  "h-5 w-5",
+                  confirmDialog?.variant === "destructive" ? "text-destructive" : "text-primary"
+                )} />
+              </div>
+              <div>
+                <DialogTitle>{confirmDialog?.title}</DialogTitle>
+                <DialogDescription className="mt-1">
+                  {confirmDialog?.description}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeConfirm}>
+              {t("Cancel")}
+            </Button>
+            <Button
+              variant={confirmDialog?.variant === "destructive" ? "destructive" : "default"}
+              onClick={async () => {
+                if (!confirmDialog) return
+                try {
+                  await confirmDialog.action()
+                  toast.success(confirmDialog.title)
+                  queryClient.invalidateQueries({ queryKey: ["products"] })
+                  closeConfirm()
+                } catch (e: any) {
+                  toast.error(e.message || t("Action failed"))
+                }
+              }}
+            >
+              {confirmDialog?.confirmLabel}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardShell>
   )
 }

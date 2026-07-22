@@ -28,7 +28,7 @@ export function ProductGrid({ compact, searchInputRef, onFilteredProducts }: Pro
 
   const { data: products = [] } = useQuery({
     queryKey: ["pos-products"],
-    queryFn: () => fetch("/api/products").then((r) => r.json()),
+    queryFn: () => fetch("/api/products?limit=200&active=true").then((r) => r.json()),
   })
 
   const { data: categories = [] } = useQuery({

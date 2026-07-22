@@ -1,0 +1,48 @@
+services:
+  db:
+    image: mariadb:11
+    container_name: pos-db
+    restart: unless-stopped
+    volumes:
+      - pos_data:/var/lib/mysql
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD required}
+      MARIADB_DATABASE: pos_rahmat
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "healthcheck.sh",
+          "--connect",
+          "--innodb_initialized",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - pos-network
+
+  app:
+    build: .
+    container_name: pos-app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql://root:${DB_PASSWORD:?}@db:3306/pos_rahmat
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET required}
+      NEXT_PUBLIC_APP_URL: ${APP_URL:?APP_URL required}
+      DB_SEED: ${DB_SEED:-false}
+      DB_MIGRATE: ${DB_MIGRATE:-true}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - pos-network
+
+volumes:
+  pos_data:
+
+networks:
+  pos-network:
+    name: pos-network
+    driver: bridge

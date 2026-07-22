@@ -2,7 +2,7 @@ export interface User {
   id: number
   name: string
   email: string
-  role: "admin" | "cashier"
+  role: "admin" | "cashier" | "warehouse" | "owner"
   active: boolean
   image?: string
 }

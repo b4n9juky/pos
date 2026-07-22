@@ -8,7 +8,7 @@ import { ProductSearch } from "@/components/pos/product-search"
 import { HoldTransactions } from "@/components/pos/hold-transactions"
 import { useCart } from "@/hooks/use-cart"
 import { useKeyboard } from "@/hooks/use-keyboard"
-import { Search, X, Loader2, Store, Percent, Trash2, LogOut, Monitor, XCircle, Scan, ShoppingCart } from "lucide-react"
+import { Search, X, Loader2, Trash2, Scan, ShoppingCart } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -16,9 +16,7 @@ import { formatCurrency } from "@/lib/format"
 import { toast } from "sonner"
 import { t } from "@/lib/translate"
 import { useQuery } from "@tanstack/react-query"
-import { useSession, signOut } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   Select,
   SelectContent,
@@ -26,25 +24,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
+
 
 function POSPageContent() {
-  const { addItem, items, itemCount, discount, subtotal, tax, total, taxRate, removeItem, clearCart, setDiscount } = useCart()
+  const { addItem, items, itemCount, discount, discountAmount, subtotal, tax, total, taxRate, membershipSettings, removeItem, clearCart, setDiscount } = useCart()
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [customerId, setCustomerId] = useState<string>("")
   const [barcode, setBarcode] = useState("")
   const [scanning, setScanning] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const scanInputRef = useRef<HTMLInputElement | null>(null)
-
-  const { data: session } = useSession()
   const searchParams = useSearchParams()
   const standalone = searchParams.get("standalone") === "true"
-
-  const { data: settings } = useQuery({
-    queryKey: ["pos-settings"],
-    queryFn: () => fetch("/api/settings").then((r) => r.json()),
-  })
 
   const { data: customers = [] } = useQuery({
     queryKey: ["pos-customers"],
@@ -82,7 +73,8 @@ function POSPageContent() {
     [
       { key: "F2", handler: () => scanInputRef.current?.focus(), ignoreWhenInput: false },
       {
-        key: "F4",
+        key: "Control",
+        location: 2,
         handler: () => {
           if (itemCount > 0) setCheckoutOpen(true)
         },
@@ -109,56 +101,29 @@ function POSPageContent() {
           removeItem(last.product.id)
         },
       },
+      {
+        key: "PageUp",
+        handler: (e) => {
+          e.preventDefault()
+          document.querySelector("[data-cart-scroll]")?.scrollBy({ top: -600, behavior: "smooth" })
+        },
+        ignoreWhenInput: true,
+      },
+      {
+        key: "PageDown",
+        handler: (e) => {
+          e.preventDefault()
+          document.querySelector("[data-cart-scroll]")?.scrollBy({ top: 600, behavior: "smooth" })
+        },
+        ignoreWhenInput: true,
+      },
     ],
     !checkoutOpen
   )
 
   return (
-    <DashboardShell hideHeader>
+    <DashboardShell hideHeader standalone={standalone}>
       <div className="flex h-full flex-col">
-        <div className="flex items-center justify-between gap-4 border-b bg-background/80 backdrop-blur-sm px-4 py-2.5 shrink-0">
-          <div className="flex items-center gap-3 min-w-0 shrink-0">
-            <Avatar className="h-8 w-8 ring-2 ring-primary/15">
-              <AvatarFallback className="text-xs font-semibold bg-primary text-primary-foreground">
-                {session?.user?.name?.charAt(0)?.toUpperCase() || "K"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold truncate leading-tight">{session?.user?.name || t("Cashier")}</p>
-              <p className="text-[11px] text-muted-foreground capitalize leading-tight">{session?.user?.role || "cashier"}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 text-muted-foreground">
-              <Store className="h-4 w-4 shrink-0" />
-              <span className="text-sm font-medium truncate max-w-[200px]">
-                {settings?.storeName || t("POS")}
-              </span>
-            </div>
-            {standalone && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.close()}
-                className="text-muted-foreground hover:text-foreground h-8 text-xs gap-1.5"
-              >
-                <XCircle className="h-4 w-4" />
-                <span className="hidden md:inline">{t("Exit POS")}</span>
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-muted-foreground hover:text-destructive h-8 text-xs gap-1.5"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden md:inline">{t("Logout")}</span>
-            </Button>
-          </div>
-        </div>
-
         <div className="flex flex-1 overflow-hidden">
           <div className="flex w-full flex-1 flex-col bg-card relative overflow-hidden">
             <div className="p-5 max-md:p-3 bg-gradient-to-b from-muted/40 to-transparent border-b shrink-0 flex justify-center">
@@ -170,7 +135,7 @@ function POSPageContent() {
                     { key: "F6", label: t("Hold") },
                     { key: "F7", label: t("Fire") },
                     { key: "Del", label: t("Remove item") },
-                    { key: "F4", label: t("Checkout") },
+                    { key: "RCtrl", label: t("Checkout") },
                     { key: "F8", label: t("Print") },
                     { key: "Esc", label: t("Clear") },
                   ].map(({ key, label }) => (
@@ -269,12 +234,28 @@ function POSPageContent() {
                       <span>{t("Tax ({rate}%)", { rate: taxRate })}</span>
                       <span className="tabular-nums font-medium">{formatCurrency(tax)}</span>
                     </div>
-                    {discount > 0 && (
-                      <div className="flex justify-between text-xs text-destructive/80">
-                        <span>{t("Discount")}</span>
-                        <span className="tabular-nums font-medium">-{formatCurrency(discount)}</span>
+                    <div className="flex justify-between text-xs items-center">
+                      <span className="text-destructive/80">{t("Discount")}</span>
+                      <div className="flex items-center gap-1">
+                        {discount > 0 && (
+                          <span className="text-[10px] text-muted-foreground tabular-nums">
+                            {formatCurrency(discountAmount)}
+                          </span>
+                        )}
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            value={discount || ""}
+                            onChange={(e) => setDiscount(Number(e.target.value) || 0)}
+                            className="h-7 w-20 text-xs text-right tabular-nums bg-muted/30 border-destructive/20 focus-visible:border-destructive/40 text-destructive/80 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none pr-5"
+                          />
+                          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+                            %
+                          </span>
+                        </div>
                       </div>
-                    )}
+                    </div>
                     <Separator className="my-0.5" />
                     <div className="flex flex-col items-center py-1.5">
                       <span className="text-[11px] text-muted-foreground tracking-wide uppercase">{t("Total")}</span>
@@ -287,30 +268,37 @@ function POSPageContent() {
                     </div>
                   </div>
                   <div className="flex flex-col w-48 max-md:w-full max-md:flex-row max-md:items-center">
-                    <div className="flex gap-1.5 p-1.5 border-b max-md:border-b-0 max-md:flex-1">
+                    <div className="flex flex-col gap-1.5 p-1.5 border-b max-md:border-b-0 max-md:flex-1">
                       <Select value={customerId} onValueChange={(v) => setCustomerId(v ?? "")}>
                         <SelectTrigger className="h-8 text-xs flex-1 bg-muted/30 border-muted-foreground/20">
                           <SelectValue placeholder={t("Walk-in customer")} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="">{t("Walk-in customer")}</SelectItem>
-                          {customers.map((c: any) => (
+                          {customers.map((c: { id: number, name: string }) => (
                             <SelectItem key={c.id} value={String(c.id)}>
                               {c.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <div className="flex items-center gap-1.5 w-24">
-                        <Percent className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          value={discount || ""}
-                          onChange={(e) => setDiscount(Number(e.target.value) || 0)}
-                          className="h-8 text-xs bg-muted/30 border-muted-foreground/20"
-                        />
-                      </div>
+                      {(() => {
+                        const selected = customerId ? customers.find((c: { id: number, name: string, loyalty_points?: string | number }) => String(c.id) === customerId) : null
+                        if (!selected) return null
+                        const points = Number(selected.loyalty_points) || 0
+                        const eligible = membershipSettings.membershipEnabled && subtotal >= membershipSettings.membershipThreshold
+                        const earned = eligible ? Math.floor(subtotal / membershipSettings.pointsPerUnit) * membershipSettings.pointsPerAmount : 0
+                        return (
+                          <div className="text-[10px] text-muted-foreground space-y-0.5 px-0.5">
+                            <p className="tabular-nums">{t("Points: {points}", { points: points.toLocaleString("id-ID") })}</p>
+                            {earned > 0 && (
+                              <p className="tabular-nums text-emerald-600 dark:text-emerald-400">
+                                {t("+{earned} pts this order", { earned: earned.toLocaleString("id-ID") })}
+                              </p>
+                            )}
+                          </div>
+                        )
+                      })()}
                     </div>
                     <div className="flex-1 p-1.5 max-md:w-auto">
                       <Button

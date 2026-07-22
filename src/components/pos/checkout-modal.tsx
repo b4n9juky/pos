@@ -44,7 +44,7 @@ function formatThousands(value: string): string {
 }
 
 export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalProps) {
-  const { items, subtotal, taxableSubtotal, tax, discount, total, taxRate, clearCart } = useCart()
+  const { items, subtotal, taxableSubtotal, tax, discount, discountAmount, total, taxRate, membershipSettings, clearCart } = useCart()
   const nonTaxableSubtotal = subtotal - taxableSubtotal
   const { data: session } = useSession()
   const queryClient = useQueryClient()
@@ -89,9 +89,20 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
   const change = Math.max(0, Number(amountPaid) - total)
   const orderNumber = orderResult?.orderNumber ?? generateOrderNumber()
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open && step === "success") return
+    onOpenChange(open)
+  }
+
   const handlePay = async (overrides?: { paymentMethod?: PaymentMethod; amountPaid?: number }) => {
     const pm = overrides?.paymentMethod ?? paymentMethod
     const ap = overrides?.amountPaid ?? Number(amountPaid)
+
+    if (pm === "cash" && ap < total) {
+      toast.error(t("Amount paid is less than the total"))
+      return
+    }
+
     setSubmitting(true)
     try {
       const res = await fetch("/api/orders", {
@@ -102,7 +113,8 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
           userId: Number(session?.user?.id) || 1,
           subtotal,
           tax,
-          discount,
+          discount: discountAmount,
+          discountPercent: discount,
           total,
           paymentMethod: pm,
           items: items.map((i) => ({
@@ -162,7 +174,7 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
   if (!open) return null
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-2xl gap-0 p-0 overflow-hidden" showCloseButton={step === "payment"}>
         {step === "payment" ? (
           <>
@@ -212,10 +224,22 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between text-destructive/80">
-                    <span>{t("Discount")}</span>
-                    <span className="tabular-nums">-{formatCurrency(discount)}</span>
+                    <span>{t("Discount ({percent}%)", { percent: discount })}</span>
+                    <span className="tabular-nums">-{formatCurrency(discountAmount)}</span>
                   </div>
                 )}
+                {(() => {
+                  const eligible = customerId && membershipSettings.membershipEnabled && subtotal >= membershipSettings.membershipThreshold
+                  if (!eligible || membershipSettings.membershipThreshold === 0) return null
+                  const earned = Math.floor(subtotal / membershipSettings.pointsPerUnit) * membershipSettings.pointsPerAmount
+                  if (earned <= 0) return null
+                  return (
+                    <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                      <span>{t("Points earned")}</span>
+                      <span className="tabular-nums font-medium">+{earned.toLocaleString("id-ID")}</span>
+                    </div>
+                  )
+                })()}
               </div>
 
               <Separator />
@@ -307,7 +331,7 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
               </Button>
               <Button
                 onClick={() => handlePay()}
-                disabled={submitting || (paymentMethod === "cash" && (Number(amountPaid) < total || Number(amountPaid) > total))}
+                disabled={submitting || (paymentMethod === "cash" && Number(amountPaid) < total)}
                 className="flex-1 sm:flex-none gap-2 shadow-sm"
               >
                 {submitting ? (
@@ -363,7 +387,7 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
                 }))}
                 subtotal={subtotal}
                 tax={tax}
-                discount={discount}
+                discount={discountAmount}
                 total={total}
                 paymentMethod={paymentMethod}
                 amountPaid={Number(amountPaid)}
@@ -378,6 +402,7 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
                 printerName={printerSettings?.printerName}
                 printerPaperWidth={printerSettings?.paperWidth}
                 printerAutoCut={printerSettings?.autoCut}
+                connectionType={printerSettings?.connectionType}
               />
             </div>
 

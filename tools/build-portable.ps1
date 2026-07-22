@@ -31,7 +31,11 @@ $CombinedSql = Join-Path $ProjectRoot "tools\schema.sql"
 $sqlFiles = @(
   "0000_sour_sugar_man.sql",
   "0001_bumpy_zaran.sql",
-  "0002_nappy_brood.sql"
+  "0002_nappy_brood.sql",
+  "0003_icy_ender_wiggin.sql",
+  "0004_complex_winter_soldier.sql",
+  "0005_bumpy_whiplash.sql",
+  "0006_young_george_stacy.sql"
 )
 
 $lines = @()
@@ -81,6 +85,8 @@ if (Test-Path $appEnv) { Remove-Item -Force $appEnv }
 # 6. Copy SQL + setup-db
 Write-Host "[6/7] Copying setup files..." -ForegroundColor Yellow
 Copy-Item -Path $CombinedSql -Destination (Join-Path $DistDir "sql\schema.sql")
+$UpgradeSql = Join-Path $ProjectRoot "portable\sql\upgrade.sql"
+if (Test-Path $UpgradeSql) { Copy-Item -Path $UpgradeSql -Destination (Join-Path $DistDir "sql\upgrade.sql") }
 # Copy print-server
 Copy-Item -Recurse -Path (Join-Path $ProjectRoot "print-server") -Destination (Join-Path $DistDir "print-server")
 # Clean print-server node_modules lock file
@@ -88,7 +94,7 @@ $psLock = Join-Path $DistDir "print-server\node_modules\.package-lock.json"
 if (Test-Path $psLock) { Remove-Item -Force $psLock -ErrorAction SilentlyContinue }
 
 # Copy batch scripts
-foreach ($file in @(  "setup.bat", "start.bat", "uninstall.bat", "seed-db.bat", "README.md")) {
+foreach ($file in @(  "setup.bat", "start.bat", "uninstall.bat", "seed-db.bat", "db-upgrade.bat", "fix-auth-url.bat", "README.md")) {
   $src = Join-Path $ProjectRoot "portable\$file"
   if (Test-Path $src) {
     Copy-Item -Path $src -Destination $DistDir
@@ -106,6 +112,10 @@ if ($LASTEXITCODE -ne 0) { throw "Seed SQL generation failed" }
 # 7. Generate .env.example + version file
 Write-Host "[7/7] Generating config files..." -ForegroundColor Yellow
 @"
+# This is a reference only. Setup.bat generates .env automatically.
+# AUTH_URL is intentionally omitted — auth config has trustHost: true,
+# so NextAuth v5 uses the request's Host header. This makes login work
+# from any LAN IP without reconfiguration.
 DATABASE_URL=mysql://root:@localhost:3307/pos_db
 AUTH_SECRET=GENERATE_ME
 NEXT_PUBLIC_APP_URL=http://localhost:3000

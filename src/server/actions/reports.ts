@@ -2,7 +2,7 @@
 
 import { db } from "@/db"
 import { orders, orderItems, products, customers, users } from "@/db/schema"
-import { eq, sql, desc } from "drizzle-orm"
+import { eq, and, sql, desc, isNull } from "drizzle-orm"
 
 export async function getSalesSummary() {
   const [summary, totalProductsSold, totalCustomers, dailySales, topProducts, recentOrders] = await Promise.all([
@@ -12,12 +12,13 @@ export async function getSalesSummary() {
         total: sql<number>`COALESCE(SUM(${orders.total}), 0)`,
       })
       .from(orders)
-      .where(eq(orders.status, "completed"))
+      .where(and(eq(orders.status, "completed"), isNull(orders.deletedAt)))
       .then((r) => r[0]),
 
     db
       .select({ total: sql<number>`COALESCE(SUM(${orderItems.quantity}), 0)` })
       .from(orderItems)
+      .where(isNull(orderItems.deletedAt))
       .then((r) => Number(r[0].total)),
 
     db
@@ -31,7 +32,7 @@ export async function getSalesSummary() {
         total: sql<number>`COALESCE(SUM(${orders.total}), 0)`,
       })
       .from(orders)
-      .where(eq(orders.status, "completed"))
+      .where(and(eq(orders.status, "completed"), isNull(orders.deletedAt)))
       .groupBy(sql`DATE(${orders.createdAt})`)
       .orderBy(desc(sql`DATE(${orders.createdAt})`))
       .then((r) => r.map((d) => ({ date: d.date, total: Number(d.total) }))),
@@ -44,6 +45,7 @@ export async function getSalesSummary() {
       })
       .from(orderItems)
       .leftJoin(products, eq(orderItems.productId, products.id))
+      .where(isNull(orderItems.deletedAt))
       .groupBy(orderItems.productId)
       .orderBy(desc(sql`COALESCE(SUM(${orderItems.quantity}), 0)`))
       .limit(5)
@@ -61,6 +63,7 @@ export async function getSalesSummary() {
       .from(orders)
       .leftJoin(customers, eq(orders.customerId, customers.id))
       .leftJoin(users, eq(orders.userId, users.id))
+      .where(isNull(orders.deletedAt))
       .orderBy(desc(orders.createdAt))
       .limit(5)
       .then((r) =>

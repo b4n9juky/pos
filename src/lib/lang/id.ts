@@ -148,12 +148,24 @@ export const id: Record<string, string> = {
 
   // Reports
   "Reports": "Laporan",
+  "Dashboard": "Dashboard",
   "Total Sales": "Total Penjualan",
   "Products Sold": "Produk Terjual",
   "Daily Sales": "Penjualan Harian",
   "Top Products": "Produk Teratas",
   "Recent Orders": "Pesanan Terbaru",
   "Sold:": "Terjual:",
+  "Avg Order Value": "Rata-rata Pesanan",
+  "Items Sold": "Item Terjual",
+  "Sales Over Time": "Penjualan dari Waktu ke Waktu",
+  "Hourly Sales": "Penjualan Per Jam",
+  "Payment Methods": "Metode Pembayaran",
+  "Recent Transactions": "Transaksi Terbaru",
+  "Low Stock Alerts": "Peringatan Stok Menipis",
+  "All products are well-stocked": "Semua produk dalam stok cukup",
+  "No data for this period": "Tidak ada data untuk periode ini",
+  "Refresh": "Muat Ulang",
+  "days": "hari",
 
   // Settings
   "Settings": "Pengaturan",
@@ -307,12 +319,14 @@ export const id: Record<string, string> = {
   ".xlsx or .xls files only": "Hanya file .xlsx atau .xls",
   "{count} rows parsed from file": "{count} baris diurai dari file",
   "{count} imported": "{count} diimpor",
+  "{count} updated": "{count} diperbarui",
   "{count} failed": "{count} gagal",
   "Row {n}: {errors}": "Baris {n}: {errors}",
   "Done": "Selesai",
   "Import {count} rows": "Impor {count} baris",
   "Importing...": "Mengimpor...",
   "{count} {title} imported": "{count} {title} berhasil diimpor",
+  "{count} {title} updated": "{count} {title} diperbarui",
   "{count} rows failed": "{count} baris gagal",
   "Import failed": "Impor gagal",
   "Close": "Tutup",
@@ -320,6 +334,21 @@ export const id: Record<string, string> = {
   // Loading / Empty / Status
   "Loading...": "Memuat...",
   "Loading": "Memuat",
+
+  // Product actions
+  "Reactivate": "Aktifkan Kembali",
+  "Reactivate product": "Aktifkan Kembali Produk",
+  "Are you sure you want to reactivate": "Apakah Anda yakin ingin mengaktifkan kembali",
+  "It will be available in POS again.": "Produk akan tersedia di POS kembali.",
+  "Deactivate product": "Nonaktifkan Produk",
+  "Are you sure you want to deactivate": "Apakah Anda yakin ingin menonaktifkan",
+  "It will be hidden from POS.": "Produk akan disembunyikan dari POS.",
+  "Delete product": "Hapus Produk",
+  "Are you sure you want to delete": "Apakah Anda yakin ingin menghapus",
+  "The product will be hidden from the system and can be restored later.": "Produk akan disembunyikan dari sistem dan dapat dipulihkan nanti.",
+  "Action failed": "Tindakan gagal",
+  "Failed to reactivate product": "Gagal mengaktifkan kembali produk",
+  "Failed to delete product": "Gagal menghapus produk",
 
   // Payment methods (for constants)
   "transfer": "Transfer Bank",
@@ -334,6 +363,8 @@ export const id: Record<string, string> = {
   // Roles
   "admin": "Admin",
   "cashier": "Kasir",
+  "warehouse": "Gudang",
+  "owner": "Pemilik",
 
   // Misc
   "Are you sure?": "Apakah Anda yakin?",
@@ -346,8 +377,39 @@ export const id: Record<string, string> = {
   "Export": "Ekspor",
   "Print receipt automatically": "Cetak struk secara otomatis",
 
+  // Printer Settings
+  "Connection Type": "Tipe Koneksi",
+  "USB (Local Printer via Print Agent)": "USB (Printer Lokal via Print Agent)",
+  "Network (Shared via Server)": "Network (Berbagi via Server)",
+  "Local print agent not responding. Run start-agent.bat": "Print agent lokal tidak merespon. Jalankan start-agent.bat",
+
   // POS - Keystrokes
   "Remove item": "Hapus item",
   "Clear field": "Batal",
   "Amount exceeds total": "Jumlah melebihi total",
+  "Amount paid is less than the total": "Jumlah pembayaran kurang dari total",
+
+  // Reset Data
+  "Reset product & order data": "Kosongkan data produk & pesanan",
+  "This will hide all products and orders from the system. The data stays in the database and can be restored by an admin.": "Ini akan menyembunyikan semua produk dan pesanan dari sistem. Data tetap tersimpan di database dan dapat dipulihkan oleh admin.",
+  "Reset Data": "Kosongkan Data",
+  "Data reset successfully": "Data berhasil dikosongkan",
+  "Reset failed": "Gagal mengosongkan data",
+  "Resetting...": "Mengosongkan...",
+
+  // Backup
+  "Backup Database": "Backup Database",
+  "Download a SQL dump of the entire database for safekeeping.": "Unduh salinan SQL dari seluruh database untuk pengamanan.",
+  "Download Backup": "Download Backup",
+
+  // Restore
+  "Restore Database": "Pulihkan Database",
+  "Upload a previously downloaded SQL backup to restore the database.": "Unggah cadangan SQL yang telah diunduh sebelumnya untuk memulihkan database.",
+  "Select SQL file": "Pilih file SQL",
+  "Restore": "Pulihkan",
+  "Restoring...": "Memulihkan...",
+  "Database restored successfully": "Database berhasil dipulihkan",
+  "Failed to restore database": "Gagal memulihkan database",
+  "This will replace ALL current data with the data from the backup file.": "Ini akan mengganti SEMUA data saat ini dengan data dari file cadangan.",
+  ".sql files only": "Hanya file .sql",
 }

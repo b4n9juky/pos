@@ -1,0 +1,9 @@
+set "PRINT_SERVER_DIR="
+if exist "%~dp0print-server\agent.ps1" set "PRINT_SERVER_DIR=%~dp0print-server"
+if not defined PRINT_SERVER_DIR if exist "%~dp0..\print-server\agent.ps1" set "PRINT_SERVER_DIR=%~dp0..\print-server"
+if defined PRINT_SERVER_DIR (
+  cd /d "!PRINT_SERVER_DIR!"
+  call start-agent.bat
+) else (
+  echo [WARNING] Folder print-server tidak ditemukan
+)

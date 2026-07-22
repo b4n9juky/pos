@@ -16,6 +16,10 @@ const settingsSchema = z.object({
   currency: z.string().max(10),
   receiptFooter: z.string().nullable(),
   autoPrint: z.boolean().optional().default(true),
+  membershipEnabled: z.boolean().optional().default(true),
+  membershipThreshold: z.number().min(0).optional().default(50000),
+  pointsPerAmount: z.number().min(0).optional().default(1),
+  pointsPerUnit: z.number().min(1).optional().default(1000),
 })
 
 export async function getSettings() {

@@ -11,6 +11,8 @@ async function seed() {
   await db.insert(users).values([
     { name: "Admin User", email: "admin@pos.com", passwordHash, role: "admin", active: true },
     { name: "Cashier One", email: "cashier@pos.com", passwordHash, role: "cashier", active: true },
+    { name: "Staff Gudang", email: "gudang@pos.com", passwordHash, role: "warehouse", active: true },
+    { name: "Owner User", email: "owner@pos.com", passwordHash, role: "owner", active: true },
   ])
   console.log("Users seeded")
 
@@ -80,6 +82,10 @@ async function seed() {
     taxRate: 10,
     currency: "IDR",
     receiptFooter: "Terima kasih telah berbelanja!",
+    membershipEnabled: true,
+    membershipThreshold: 50000,
+    pointsPerAmount: 1,
+    pointsPerUnit: 1000,
   })
   console.log("Store settings seeded")
 

@@ -14,10 +14,13 @@ Pastikan folder ini berisi:
 ├── 📁 print-server/     # Print proxy
 ├── 📁 node/             # Node.js portable
 ├── 📁 mariadb/          # MariaDB portable
-├── 📁 sql/              # File migrasi
-├── 📄 setup.bat         ← Klik ini untuk install
+├── 📁 sql/              # File migrasi database
+├── 📄 setup.bat         ← Klik ini untuk install pertama
 ├── 📄 start.bat         ← Klik ini setiap mau pakai
-└── 📄 uninstall.bat     ← Hapus
+├── 📄 cashier.bat       ← Copy ke PC kasir lain (client-only)
+├── 📄 fix-auth-url.bat  ← Perbaiki login LAN IP (hapus AUTH_URL dari .env)
+├── 📄 db-upgrade.bat    ← Upgrade database tanpa hapus data
+└── 📄 uninstall.bat     ← Hapus semua
 ```
 
 ### 2. Install (cukup sekali)
@@ -43,6 +46,18 @@ Proses ini akan:
 | Admin | admin@pos.com | password |
 | Kasir | cashier@pos.com | password |
 
+## Upgrade Database
+
+Saat ada pembaruan dengan tabel database baru, data Anda **tidak perlu dihapus**. Cukup:
+
+1. **Tutup POS Rahmat** (tutup jendela `start.bat`)
+2. **Copy** `db-upgrade.bat` dan folder `sql/` dari paket baru ke folder POS Rahmat
+3. **Double-click `db-upgrade.bat`**
+4. Tunggu sampai muncul "UPGRADE SELESAI"
+5. Jalankan `start.bat` seperti biasa
+
+Proses ini hanya menambahkan tabel/index yang belum ada — data transaksi, produk, dan pengaturan tetap aman.
+
 ## Yang Perlu Diketahui
 
 ### Port yang dipakai
@@ -52,6 +67,23 @@ Proses ini akan:
 | 3000 | Aplikasi POS (buka di browser) |
 | 3307 | Database (hanya lokal) |
 | 8090 | Print server (hanya lokal) |
+
+### Mode Server + Kasir (2 PC)
+
+Bisa memisahkan **PC server** (penyimpan data) dan **PC kasir** (client).
+
+**PC Server** (yang menyimpan database):
+1. Install normal dengan `setup.bat`, lalu jalankan `start.bat`
+2. Catat IP address server (ditampilkan di jendela saat startup)
+3. Contoh IP: `192.168.1.100`
+
+**PC Kasir** (client — tidak perlu install apa-apa):
+1. Copy file `cashier.bat` ke PC kasir (via USB atau jaringan)
+2. Jalankan `cashier.bat`, masukkan IP server saat diminta
+3. Browser akan terbuka ke halaman login POS
+4. Login dengan akun kasir: `cashier@pos.com` / `password`
+
+PC kasir hanya butuh browser — tidak perlu Node.js, MariaDB, atau folder app.
 
 ### Printer Thermal
 

@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from "react"
 import { Download, Printer } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatCurrency, formatDate } from "@/lib/format"
-import { printReceipt, sendToThermalPrinter } from "@/lib/print"
+import { printReceipt, sendToThermalPrinter, sendToLocalPrinter } from "@/lib/print"
 import { toast } from "sonner"
 import { t } from "@/lib/translate"
 import type { PaymentMethod } from "@/types"
@@ -66,6 +66,7 @@ interface ReceiptPDFProps {
   printerName?: string
   printerPaperWidth?: number
   printerAutoCut?: boolean
+  connectionType?: string
 }
 
 export function ReceiptPDF({
@@ -89,6 +90,7 @@ export function ReceiptPDF({
   printerName,
   printerPaperWidth = 58,
   printerAutoCut = true,
+  connectionType = "usb",
 }: ReceiptPDFProps) {
   const receiptRef = useRef<HTMLDivElement>(null)
   const [pdfLoading, setPdfLoading] = useState(false)
@@ -96,14 +98,14 @@ export function ReceiptPDF({
   const printDataRef = useRef({
     items, subtotal, tax, discount, total, paymentMethod, amountPaid, change,
     storeName, storeAddress, storePhone, receiptFooter, customerName, cashierName,
-    autoPrint, printerEnabled, printerName, printerPaperWidth, printerAutoCut, orderNumber,
+    autoPrint, printerEnabled, printerName, printerPaperWidth, printerAutoCut, orderNumber, connectionType,
   })
 
   useEffect(() => {
     printDataRef.current = {
       items, subtotal, tax, discount, total, paymentMethod, amountPaid, change,
       storeName, storeAddress, storePhone, receiptFooter, customerName, cashierName,
-      autoPrint, printerEnabled, printerName, printerPaperWidth, printerAutoCut, orderNumber,
+      autoPrint, printerEnabled, printerName, printerPaperWidth, printerAutoCut, orderNumber, connectionType,
     }
   })
 
@@ -116,7 +118,7 @@ export function ReceiptPDF({
     const el = receiptRef.current
     const doPrint = async () => {
       if (d.printerEnabled && d.printerName) {
-        const ok = await sendToThermalPrinter({
+        const payload = {
           printerName: d.printerName,
           paperWidth: d.printerPaperWidth,
           autoCut: d.printerAutoCut,
@@ -141,7 +143,20 @@ export function ReceiptPDF({
           tax: d.tax,
           discount: d.discount,
           total: d.total,
-        })
+        }
+
+        let ok = false
+
+        if (d.connectionType === "usb") {
+          ok = await sendToLocalPrinter(payload)
+          if (!ok) {
+            console.warn("Local print agent unavailable, trying server...")
+            ok = await sendToThermalPrinter(payload)
+          }
+        } else {
+          ok = await sendToThermalPrinter(payload)
+        }
+
         if (ok) {
           toast.success(t("Receipt printed"))
         } else {

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react"
 import * as XLSX from "xlsx"
-import { Upload, Download, FileSpreadsheet, Loader2, CheckCircle2, XCircle } from "lucide-react"
+import { Upload, Download, FileSpreadsheet, Loader2, CheckCircle2, XCircle, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -17,8 +17,10 @@ import { t } from "@/lib/translate"
 
 interface ImportResult {
   success: number
+  updated: number
   failed: number
   errors: { row: number; errors: string[] }[]
+  warnings: { row: number; message: string }[]
 }
 
 interface ImportModalProps {
@@ -33,6 +35,7 @@ interface ImportModalProps {
 export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl, onSuccess }: ImportModalProps) {
   const [file, setFile] = useState<File | null>(null)
   const [parsedRows, setParsedRows] = useState<Record<string, unknown>[]>([])
+  const [sheetSummary, setSheetSummary] = useState<{ name: string; count: number }[]>([])
   const [importing, setImporting] = useState(false)
   const [result, setResult] = useState<ImportResult | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -45,9 +48,17 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
     reader.onload = (ev) => {
       const data = new Uint8Array(ev.target?.result as ArrayBuffer)
       const workbook = XLSX.read(data, { type: "array" })
-      const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" })
-      setParsedRows(json)
+      const combined: Record<string, unknown>[] = []
+      const summary: { name: string; count: number }[] = []
+      for (const sheetName of workbook.SheetNames) {
+        const sheet = workbook.Sheets[sheetName]
+        const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" })
+        const tagged = json.map((r) => ({ ...r, __sheet: sheetName }))
+        combined.push(...tagged)
+        summary.push({ name: sheetName, count: json.length })
+      }
+      setParsedRows(combined)
+      setSheetSummary(summary)
     }
     reader.readAsArrayBuffer(f)
   }, [])
@@ -77,8 +88,9 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
       })
       const data: ImportResult = await res.json()
       setResult(data)
-      if (data.success > 0 && onSuccess) onSuccess()
+      if ((data.success > 0 || data.updated > 0) && onSuccess) onSuccess()
       if (data.success > 0) toast.success(t("{count} {title} imported", { count: data.success, title: title.toLowerCase() }))
+      if (data.updated > 0) toast.info(t("{count} {title} updated", { count: data.updated, title: title.toLowerCase() }))
       if (data.failed > 0) toast.error(t("{count} rows failed", { count: data.failed }))
     } catch {
       toast.error(t("Import failed"))
@@ -90,6 +102,7 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
   const reset = () => {
     setFile(null)
     setParsedRows([])
+    setSheetSummary([])
     setResult(null)
     if (inputRef.current) inputRef.current.value = ""
   }
@@ -103,7 +116,7 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>{t("Import {title}", { title })}</DialogTitle>
           <DialogDescription>
@@ -111,7 +124,7 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto max-h-[calc(90vh-9rem)] pr-1">
           <a
             href={templateUrl}
             className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
@@ -148,7 +161,19 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
           </div>
 
           {fileRows && !result && (
-            <p className="text-sm text-muted-foreground">{t("{count} rows parsed from file", { count: parsedRows.length })}</p>
+            <div className="space-y-1">
+              {sheetSummary.slice(0, 10).map((s) => (
+                <p key={s.name} className="text-sm text-muted-foreground">
+                  &ldquo;{s.name}&rdquo;: {s.count} baris
+                </p>
+              ))}
+              {sheetSummary.length > 10 && (
+                <p className="text-sm text-muted-foreground">+{sheetSummary.length - 10} sheet lagi</p>
+              )}
+              <p className="text-sm font-medium text-foreground">
+                {t("{count} rows parsed from file", { count: parsedRows.length })}
+              </p>
+            </div>
           )}
 
           {result && (
@@ -158,6 +183,12 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
                   <CheckCircle2 className="h-4 w-4" />
                   {t("{count} imported", { count: result.success })}
                 </span>
+                {result.updated > 0 && (
+                  <span className="flex items-center gap-1.5 text-amber-600 font-medium">
+                    <AlertTriangle className="h-4 w-4" />
+                    {t("{count} updated", { count: result.updated })}
+                  </span>
+                )}
                 {result.failed > 0 && (
                   <span className="flex items-center gap-1.5 text-destructive font-medium">
                     <XCircle className="h-4 w-4" />
@@ -165,6 +196,15 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
                   </span>
                 )}
               </div>
+              {result.warnings.length > 0 && (
+                <div className="max-h-24 overflow-y-auto rounded border bg-amber-50 dark:bg-amber-950/20 p-2 text-xs space-y-1 font-mono">
+                  {result.warnings.map((w, i) => (
+                    <p key={i} className="text-amber-700 dark:text-amber-400">
+                      {t("Row {n}: {errors}", { n: w.row, errors: w.message })}
+                    </p>
+                  ))}
+                </div>
+              )}
               {result.errors.length > 0 && (
                 <div className="max-h-40 overflow-y-auto rounded border bg-muted/50 p-2 text-xs space-y-1 font-mono">
                   {result.errors.map((e, i) => (

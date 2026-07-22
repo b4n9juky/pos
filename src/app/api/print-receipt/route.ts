@@ -41,18 +41,20 @@ function buildReceipt(printer: ThermalPrinter, data: any) {
     printer.drawLine()
   }
 
-  const cItem = Math.floor(W * 0.48)
-  const cQty = Math.floor(W * 0.12)
-  const cSub = W - cItem - cQty - 4
+  const cItem = Math.floor(W * 0.38)
+  const cPrice = Math.floor(W * 0.18)
+  const cQty = Math.floor(W * 0.10)
+  const cSub = W - cItem - cPrice - cQty - 3
 
   printer.bold(true)
-  printer.println("ITEM".padEnd(cItem) + "  " + "QTY".padStart(cQty) + "  " + "SUBTOTAL".padStart(cSub))
+  printer.println("ITEM".padEnd(cItem) + " " + "PRICE".padStart(cPrice) + " " + "QTY".padStart(cQty) + " " + "SUBTOTAL".padStart(cSub))
   printer.bold(false)
   printer.drawLine()
   for (const item of items) {
     printer.println(
-      item.name.substring(0, cItem).padEnd(cItem) + "  " +
-      String(item.quantity).padStart(cQty) + "  " +
+      item.name.substring(0, cItem).padEnd(cItem) + " " +
+      fmt(item.price).padStart(cPrice) + " " +
+      String(item.quantity).padStart(cQty) + " " +
       fmt(item.subtotal).padStart(cSub)
     )
   }
@@ -149,8 +151,9 @@ export async function POST(req: Request) {
       type: PrinterTypes.EPSON,
       interface: "tcp://0.0.0.0:1",
       width: getChars(data.paperWidth),
-      characterSet: CharacterSet.PC437_USA,
+      characterSet: CharacterSet.PC850_MULTILINGUAL,
       removeSpecialCharacters: false,
+      options: { timeout: 5000 },
     })
 
     buildReceipt(printer, data)

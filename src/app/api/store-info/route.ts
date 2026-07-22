@@ -8,5 +8,6 @@ export async function GET() {
     storeAddress: data?.storeAddress ?? null,
     storePhone: data?.storePhone ?? null,
     receiptFooter: data?.receiptFooter ?? null,
+    autoPrint: data?.autoPrint ?? true,
   })
 }

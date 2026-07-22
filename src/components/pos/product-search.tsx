@@ -1,7 +1,9 @@
 "use client"
 
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useCart } from "@/hooks/use-cart"
+import { useDebounce } from "@/hooks/use-debounce"
 import {
   Command,
   CommandDialog,
@@ -11,8 +13,9 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/components/ui/command"
+import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/format"
-import { Package } from "lucide-react"
+import { Package, Loader2 } from "lucide-react"
 import { t } from "@/lib/translate"
 import type { Product } from "@/types"
 
@@ -23,11 +26,21 @@ interface ProductSearchProps {
 
 export function ProductSearch({ open, onOpenChange }: ProductSearchProps) {
   const { addItem } = useCart()
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebounce(search, 200)
 
-  const { data: products = [] } = useQuery({
-    queryKey: ["pos-products-search"],
-    queryFn: () => fetch("/api/products").then((r) => r.json()),
+  const { data: products = [], isPending, isError, refetch } = useQuery({
+    queryKey: ["pos-products-search", debouncedSearch],
+    queryFn: async () => {
+      const params = new URLSearchParams({ limit: "200", active: "true" })
+      if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim())
+      const res = await fetch(`/api/products?${params}`)
+      if (!res.ok) throw new Error("Failed to fetch products")
+      return res.json()
+    },
     enabled: open,
+    retry: 1,
+    staleTime: 30_000,
   })
 
   const handleSelect = (product: Product) => {
@@ -42,19 +55,37 @@ export function ProductSearch({ open, onOpenChange }: ProductSearchProps) {
       onOpenChange={onOpenChange}
       title={t("Search Products")}
       description={t("Search products by name, SKU, or barcode")}
+      className="sm:max-w-xl"
       showCloseButton
     >
-      <Command>
-        <CommandInput placeholder={t("Search products...")} />
+      <Command shouldFilter={false}>
+        <CommandInput
+          placeholder={t("Search products...")}
+          value={search}
+          onValueChange={setSearch}
+        />
         <CommandList>
-          <CommandEmpty>{t("No products found")}</CommandEmpty>
+          {!isPending && !isError && (
+            <CommandEmpty>{t("No products found")}</CommandEmpty>
+          )}
           <CommandGroup>
-            {products
-              .filter((p: any) => p.active)
-              .map((product: any) => (
+            {isPending ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">{t("Loading...")}</span>
+              </div>
+            ) : isError ? (
+              <div className="flex flex-col items-center gap-2 py-6">
+                <p className="text-sm text-destructive">{t("Failed to load products")}</p>
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                  {t("Retry")}
+                </Button>
+              </div>
+            ) : (
+              products.map((product: any) => (
                 <CommandItem
                   key={product.id}
-                  value={`${product.name} ${product.sku} ${product.barcode || ""}`}
+                  value={String(product.id)}
                   onSelect={() => handleSelect(product)}
                   disabled={product.stock <= 0}
                   className="flex items-center gap-3 py-2.5"
@@ -79,7 +110,8 @@ export function ProductSearch({ open, onOpenChange }: ProductSearchProps) {
                     </div>
                   </div>
                 </CommandItem>
-              ))}
+              ))
+            )}
           </CommandGroup>
         </CommandList>
       </Command>
