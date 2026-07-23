@@ -1,0 +1,45 @@
+# Deploy di Portainer sebagai stack terpisah.
+# Portainer → Stacks → Add Stack → name: "pos-certbot" → paste ini → Deploy
+#
+# Setelah deploy:
+#   1. Generate SSL pertama — jalankan perintah di bawah via Portainer Console
+#   2. Tambah HTTPS server block ke hadirq-nginx (copy dari nginx/nginx.conf)
+#
+# Generate SSL pertama:
+#   Portainer → Containers → pos-certbot-init → Console →
+#   certbot certonly --webroot -w /var/www/certbot -d pos.berkahutama.web.id
+#
+# Prasyarat (dilakukan SEKALI via Portainer):
+#   - Container hadirq-nginx → Network → Join a network → "pos-network"
+
+services:
+  certbot-init:
+    image: certbot/certbot
+    container_name: pos-certbot-init
+    volumes:
+      - hadirq_certs_data:/etc/letsencrypt
+      - hadirq_certbot_www:/var/www/certbot
+    entrypoint: ["sleep", "infinity"]
+    restart: "no"
+
+  certbot-renew:
+    image: certbot/certbot
+    container_name: pos-certbot-renew
+    restart: unless-stopped
+    volumes:
+      - hadirq_certs_data:/etc/letsencrypt
+      - hadirq_certbot_www:/var/www/certbot
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        apk add --quiet --no-cache docker-cli
+        echo '0 3 * * * certbot renew --quiet --post-hook "docker exec hadirq-nginx nginx -s reload 2>/dev/null || true"' > /etc/crontabs/root
+        echo '[INFO] Certbot renew scheduler started. Runs at 3am daily.'
+        crond -f -l 2
+
+volumes:
+  hadirq_certs_data:
+    external: true
+  hadirq_certbot_www:
+    external: true

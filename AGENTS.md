@@ -177,6 +177,8 @@ docker compose exec db mariadb -uroot -p${DB_PASSWORD} pos_rahmat
 
 Pos-rahmat tidak pakai nginx sendiri. Gunakan nginx yang sudah ada (yang handle apps lain).
 
+Referensi config ada di `nginx/nginx.conf`. HTTP block sudah include `location /.well-known/acme-challenge/` untuk certbot.
+
 **1. Hubungkan existing nginx ke network `pos-network`**
 
 Di Portainer: container nginx existing → **Network** → Join `pos-network`
@@ -188,41 +190,40 @@ docker network connect pos-network <existing-nginx-container>
 
 **2. Tambah server block ke nginx existing**
 
-Copy dari `nginx/nginx.conf` — atau tambah manual:
-
-```nginx
-server {
-    listen 80;
-    server_name pos.berkahutama.web.id;
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name pos.berkahutama.web.id;
-
-    ssl_certificate     /etc/letsencrypt/live/pos.berkahutama.web.id/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/pos.berkahutama.web.id/privkey.pem;
-
-    location / {
-        proxy_pass http://pos-app:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
+Copy isi `nginx/nginx.conf` ke config nginx (misal `/etc/nginx/conf.d/pos.conf`).
 
 **3. Reload nginx**
 
 ```sh
-docker exec <existing-nginx-container> nginx -s reload
+docker exec <existing-nginx-container> nginx -t && docker exec <existing-nginx-container> nginx -s reload
 ```
 
-**4. SSL certificate**
+**4. SSL certificate — auto-renew with Portainer**
 
-Jika nginx existing sudah handle SSL untuk domain lain, bisa pakai certbot yang sama atau diurus sesuai setup yang sudah berjalan. Domain `pos.berkahutama.web.id` bisa ditambah ke certbot yang sudah ada.
+Deploy `docker-compose.portainer.yml` sebagai stack terpisah di Portainer:
+
+Portainer → **Stacks** → **Add Stack** → name: `pos-certbot` → paste isi file → **Deploy**
+
+Stack ini berisi:
+- `certbot-init` — container standby (sleep infinity) untuk generate SSL pertama
+- `certbot-renew` — auto-renew setiap hari jam 3 pagi + reload nginx otomatis
+
+**Generate SSL pertama kali:**
+
+Portainer → **Containers** → `pos-certbot-init` → **Console** → jalankan:
+```sh
+certbot certonly --webroot -w /var/www/certbot -d pos.berkahutama.web.id
+```
+
+Ikuti interaksi (email, agree TOS). Setelah selesai, file cert akan muncul di volume `hadirq_certs_data`.
+
+**5. Verifikasi**
+
+```sh
+docker exec <existing-nginx-container> nginx -t && docker exec <existing-nginx-container> nginx -s reload
+```
+
+Buka `https://pos.berkahutama.web.id` — harusnya sudah HTTPS.
 
 ### Portainer deploy steps
 
