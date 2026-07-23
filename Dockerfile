@@ -25,6 +25,13 @@ COPY --from=builder /app/public ./public
 
 COPY --from=builder /app/src/db/migrations ./src/db/migrations
 COPY --from=builder /app/scripts ./scripts
+
+RUN npm install --no-save \
+  drizzle-orm@0.45.2 \
+  mysql2@3.22.6 \
+  bcryptjs@3.0.3 \
+  dotenv@17.4.2
+
 RUN chmod +x scripts/docker-entrypoint.sh
 
 USER nextjs

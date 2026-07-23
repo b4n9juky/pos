@@ -58,7 +58,7 @@ No test framework or test files exist currently.
 ```
 DATABASE_URL=mysql://root:@localhost:3306/pos_db
 AUTH_SECRET=<any-random-string>
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=https://pos.berkahutama.web.id
 ```
 
 `.env*` is gitignored. `src/db/index.ts` loads it via `import "dotenv/config"`.
