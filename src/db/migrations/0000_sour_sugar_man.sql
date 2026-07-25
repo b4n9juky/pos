@@ -1,5 +1,5 @@
 CREATE TABLE `cash_registers` (
-	`id` serial AUTO_INCREMENT NOT NULL,
+	`id` int AUTO_INCREMENT NOT NULL,
 	`user_id` int NOT NULL,
 	`opened_at` timestamp NOT NULL DEFAULT (now()),
 	`closed_at` timestamp,
@@ -14,7 +14,7 @@ CREATE TABLE `cash_registers` (
 );
 --> statement-breakpoint
 CREATE TABLE `categories` (
-	`id` serial AUTO_INCREMENT NOT NULL,
+	`id` int AUTO_INCREMENT NOT NULL,
 	`name` varchar(255) NOT NULL,
 	`slug` varchar(255) NOT NULL,
 	`description` text,
@@ -25,7 +25,7 @@ CREATE TABLE `categories` (
 );
 --> statement-breakpoint
 CREATE TABLE `customers` (
-	`id` serial AUTO_INCREMENT NOT NULL,
+	`id` int AUTO_INCREMENT NOT NULL,
 	`name` varchar(255) NOT NULL,
 	`email` varchar(255),
 	`phone` varchar(50),
@@ -37,7 +37,7 @@ CREATE TABLE `customers` (
 );
 --> statement-breakpoint
 CREATE TABLE `order_items` (
-	`id` serial AUTO_INCREMENT NOT NULL,
+	`id` int AUTO_INCREMENT NOT NULL,
 	`order_id` int NOT NULL,
 	`product_id` int NOT NULL,
 	`quantity` int NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE `order_items` (
 );
 --> statement-breakpoint
 CREATE TABLE `orders` (
-	`id` serial AUTO_INCREMENT NOT NULL,
+	`id` int AUTO_INCREMENT NOT NULL,
 	`order_number` varchar(50) NOT NULL,
 	`customer_id` int,
 	`user_id` int NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE `orders` (
 );
 --> statement-breakpoint
 CREATE TABLE `products` (
-	`id` serial AUTO_INCREMENT NOT NULL,
+	`id` int AUTO_INCREMENT NOT NULL,
 	`name` varchar(255) NOT NULL,
 	`sku` varchar(100) NOT NULL,
 	`barcode` varchar(100),
@@ -86,7 +86,7 @@ CREATE TABLE `products` (
 );
 --> statement-breakpoint
 CREATE TABLE `users` (
-	`id` serial AUTO_INCREMENT NOT NULL,
+	`id` int AUTO_INCREMENT NOT NULL,
 	`name` varchar(255) NOT NULL,
 	`email` varchar(255) NOT NULL,
 	`password_hash` varchar(255) NOT NULL,
