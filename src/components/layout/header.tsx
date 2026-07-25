@@ -33,7 +33,7 @@ export function Header({ title, actions }: HeaderProps) {
     .slice(0, 2)
 
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6 sticky top-0 z-30">
+    <header className="flex h-14 items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6 sticky top-0 z-30">
       {title && (
         <h1 className="text-base font-semibold text-foreground tracking-tight">{title}</h1>
       )}

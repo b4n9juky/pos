@@ -18,13 +18,13 @@ import { useTheme } from "next-themes"
 
 const allNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: Gauge, roles: ["owner"] },
-  { href: "/pos", label: "POS", icon: ShoppingCart, roles: ["admin", "cashier", "owner"] },
-  { href: "/products", label: "Produk", icon: Package, roles: ["admin", "warehouse", "owner"] },
+  { href: "/pos", label: "POS", icon: ShoppingCart, roles: ["admin", "cashier"] },
+  { href: "/products", label: "Produk", icon: Package, roles: ["admin", "warehouse"] },
   { href: "/categories", label: "Kategori", icon: FolderTree, roles: ["admin"] },
   { href: "/customers", label: "Pelanggan", icon: Users, roles: ["admin"] },
-  { href: "/orders", label: "Pesanan", icon: FileText, roles: ["admin", "cashier", "owner"] },
+  { href: "/orders", label: "Pesanan", icon: FileText, roles: ["admin", "cashier"] },
   { href: "/reports", label: "Laporan", icon: BarChart3, roles: ["admin"] },
-  { href: "/register", label: "Kasir", icon: CircleDollarSign, roles: ["admin", "cashier", "owner"] },
+  { href: "/register", label: "Kasir", icon: CircleDollarSign, roles: ["admin", "cashier"] },
   { href: "/settings", label: "Pengaturan", icon: Settings, roles: ["admin"] },
 ]
 

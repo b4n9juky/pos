@@ -51,7 +51,9 @@ echo   [SUCCESS] Database berhasil diisi!
 echo ============================================
 echo.
 echo   Login:
-echo     Admin:  admin@pos.com / password
-echo     Kasir:  cashier@pos.com / password
+echo     Admin:     admin@pos.com / password
+echo     Kasir:     cashier@pos.com / password
+echo     Gudang:    gudang@pos.com / password
+echo     Owner:     owner@pos.com / password
 echo.
 pause

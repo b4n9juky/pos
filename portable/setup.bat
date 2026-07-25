@@ -311,8 +311,10 @@ if defined LAN_IP (
   echo.
 )
 call :color White "  Login:"
-call :color White "    Admin:  admin@pos.com / password"
-call :color White "    Kasir:  cashier@pos.com / password"
+call :color White "    Admin:     admin@pos.com / password"
+call :color White "    Kasir:     cashier@pos.com / password"
+call :color White "    Gudang:    gudang@pos.com / password"
+call :color White "    Owner:     owner@pos.com / password"
 echo.
 call :color White "  Printer: Atur di menu Settings > Printer"
 echo.

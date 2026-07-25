@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 
 const publicPaths = ["/login", "/api/auth", "/api/print-receipt"]
-const adminOnlyPaths = ["/settings", "/reports", "/api/users", "/api/settings", "/api/tax-settings", "/api/reports"]
+const adminOnlyPaths = ["/settings", "/reports", "/api/users", "/api/settings", "/api/tax-settings"]
 const warehouseAllowedPaths = ["/products", "/api/products", "/api/categories"]
 const adminWriteApiPaths = ["/api/products", "/api/categories", "/api/customers"]
 const ownerOnlyPaths = ["/dashboard", "/api/dashboard"]
@@ -45,6 +45,12 @@ export default auth((req) => {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 })
       }
       return NextResponse.redirect(new URL("/pos", req.url))
+    }
+  }
+
+  if (pathname.startsWith("/api/reports")) {
+    if (role !== "admin" && role !== "owner") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
   }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useCart } from "@/hooks/use-cart"
 import { useDebounce } from "@/hooks/use-debounce"
@@ -28,6 +28,10 @@ export function ProductSearch({ open, onOpenChange }: ProductSearchProps) {
   const { addItem } = useCart()
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 200)
+
+  useEffect(() => {
+    if (open) setSearch("")
+  }, [open])
 
   const { data: products = [], isPending, isError, refetch } = useQuery({
     queryKey: ["pos-products-search", debouncedSearch],

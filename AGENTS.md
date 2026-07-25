@@ -170,8 +170,95 @@ docker compose exec db mariadb -uroot -p${DB_PASSWORD} pos_rahmat
 | `DB_PASSWORD` | Yes | MariaDB root password |
 | `AUTH_SECRET` | Yes | NextAuth JWT secret (min 32 chars) |
 | `APP_URL` | Yes | Public URL of the app (e.g. `https://pos.berkahutama.web.id`) |
-| `DB_SEED` | No | Set to `true` to seed demo data on first deploy |
+| `DB_SEED` | No | Set to `true` on FIRST deploy only (will fail on re-deploy) |
 | `DB_MIGRATE` | No | Set to `false` to skip auto-migration (default `true`) |
+
+### Known issues & fixes
+
+#### 1. Migration fails — `serial AUTO_INCREMENT` invalid in MariaDB 11
+
+Drizzle generates `serial AUTO_INCREMENT NOT NULL` for `int().primaryKey().autoincrement()`.  
+This syntax is **invalid in MariaDB 11**. Fix: replace with `int AUTO_INCREMENT NOT NULL` in migration SQL.
+
+Affected file: `src/db/migrations/0000_sour_sugar_man.sql` (all `id` columns).
+
+**Fix in migration SQL:**
+```sql
+-- Before (MariaDB 11 rejects this):
+`id` serial AUTO_INCREMENT NOT NULL,
+-- After:
+`id` int AUTO_INCREMENT NOT NULL,
+```
+
+If migration already failed and DB is empty, fix the SQL file then run manually:
+```sh
+docker run --rm --network pos-network \
+  -e DATABASE_URL="mysql://root:${DB_PASSWORD}@db:3306/pos_rahmat" \
+  pos-app:latest sh -c "node scripts/migrate.mjs && node scripts/seed.mjs"
+```
+
+#### 2. `ERR_MODULE_NOT_FOUND` — missing packages in Docker image
+
+Next.js `output: "standalone"` bundles only runtime deps. Scripts under `scripts/` that import `drizzle-orm`, `mysql2`, `bcryptjs`, `dotenv` won't find them.
+
+**Fix in Dockerfile** (already applied):
+```dockerfile
+RUN npm install --no-save \
+  drizzle-orm@0.45.2 \
+  mysql2@3.22.6 \
+  bcryptjs@3.0.3 \
+  dotenv@17.4.2
+```
+
+**Quick fix on server without rebuild:**
+```sh
+docker run -d --name pos-fix --entrypoint "" pos-app:latest \
+  sh -c "cd /app && npm install --no-save drizzle-orm@0.45.2 mysql2@3.22.6 bcryptjs@3.0.3 dotenv@17.4.2"
+docker commit --change 'ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]' \
+  --change 'CMD ["node", "server.js"]' pos-fix pos-app:latest
+docker rm pos-fix
+```
+
+#### 3. Docker network sandbox corrupt / `invalid IP`
+
+Occurs after Docker daemon restart or crash. Symptoms: `EndpointID: ""`, `IPAddress: ""`, `invalid IP`.
+
+**Fix:**
+```sh
+# Recreate container via compose (data safe):
+docker compose down   # removes container + network, NOT volume
+docker compose up -d  # fresh network + container
+
+# For existing nginx container:
+docker network disconnect --force pos-network <container>
+docker network connect pos-network <container>
+```
+
+#### 4. App crashes after `docker commit` — wrong entrypoint
+
+When using `docker commit` after a temporary container, the entrypoint/cmd may be overwritten (e.g., set to `["sleep"]`).
+
+**Fix:** Always use `--change` when committing:
+```sh
+docker commit --change 'ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]' \
+  --change 'CMD ["node", "server.js"]' <temp-container> pos-app:latest
+```
+
+#### 5. `docker run` command (manual, without compose)
+
+When docker-compose.yml is not accessible on server:
+```sh
+docker run -d \
+  --name pos-app \
+  --network pos-network \
+  --restart unless-stopped \
+  -e DATABASE_URL="mysql://root:${DB_PASSWORD}@db:3306/pos_rahmat" \
+  -e AUTH_SECRET="${AUTH_SECRET}" \
+  -e NEXT_PUBLIC_APP_URL="https://pos.berkahutama.web.id" \
+  -e DB_SEED=false \
+  -e DB_MIGRATE=true \
+  pos-app:latest
+```
 
 ### Nginx integration (dengan existing nginx)
 

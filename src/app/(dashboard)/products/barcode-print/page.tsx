@@ -316,14 +316,14 @@ function BarcodePrintContent() {
         const ean = getEAN13Digits(bcVal) || bcVal.replace(/\D/g, "").padEnd(12, "0").slice(0, 12)
         const eanW = 220
         const centerOff = Math.max(0, Math.floor((availW - eanW) / 2))
-        const mw = bcModuleWidth > 0 ? Math.max(1, bcModuleWidth) : 2
+        const mw = bcModuleWidth > 0 ? Math.max(1, Math.round(bcModuleWidth)) : 2
         const bcLeft = xOff + marginDots + centerOff + bcOffXD
         const bcTop = y + bcOffYD
         block += `^BY${mw},3\n^FO${bcLeft},${bcTop}\n^A${fn},${bcTextFS},${bcTextFS}\n^BEN,${finalBcH},${bcShowVal},N\n^FD${escZPL(ean)}^FS\n\n`
         pricePos(bcLeft, bcTop, eanW, finalBcH)
       } else {
         const estModules = (bcVal.length * 11) + 35
-        let moduleW = bcModuleWidth > 0 ? Math.max(1, bcModuleWidth) : Math.max(1, Math.min(3, Math.floor((availW - 8) / Math.max(estModules, 50))))
+        let moduleW = bcModuleWidth > 0 ? Math.max(1, Math.round(bcModuleWidth)) : Math.max(1, Math.min(3, Math.floor((availW - 8) / Math.max(estModules, 50))))
         if (bcModuleWidth <= 0) {
           while (moduleW < 3 && (moduleW + 1) * Math.max(estModules, 50) + 8 <= availW) moduleW++
         }
@@ -605,8 +605,8 @@ function BarcodePrintContent() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Lebar Modul (dots)</Label>
-                  <Input type="number" className="h-8 text-xs" value={bcModuleWidth} onChange={(e) => setBcModuleWidth(Math.max(0, Math.min(5, parseInt(e.target.value) || 0)))} step={1} min={0} max={5} />
-                  <p className="text-[10px] text-muted-foreground">0 = otomatis. Min ZPL 1.</p>
+                  <Input type="number" className="h-8 text-xs" value={bcModuleWidth} onChange={(e) => setBcModuleWidth(Math.max(0, Math.min(5, parseFloat(e.target.value) || 0)))} step={0.1} min={0} max={5} />
+                  <p className="text-[10px] text-muted-foreground">0 = otomatis. Desimal didukung.</p>
                 </div>
               </div>
 

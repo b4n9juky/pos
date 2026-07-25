@@ -24,7 +24,7 @@ export function DashboardShell({ children, title, actions, hideSidebar, hideHead
       {showSidebar && <Sidebar standalone={standalone} />}
       <div className="flex flex-1 flex-col overflow-hidden">
         {showHeader && <Header title={title} actions={actions} />}
-        <main className={cn("flex-1 overflow-auto", hasPadding && "p-6")}>
+        <main className={cn("flex-1 overflow-auto", hasPadding && "p-4 md:p-6")}>
           {children}
         </main>
       </div>

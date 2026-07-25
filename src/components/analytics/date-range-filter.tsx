@@ -52,22 +52,35 @@ export function DateRangeFilter({ onChange, className }: DateRangeFilterProps) {
   }
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
-      {presets.map((preset) => (
-        <button
-          key={preset.key}
-          onClick={() => handlePresetClick(preset.key)}
-          className={cn(
-            "px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200",
-            "border border-border",
-            activePreset === preset.key
-              ? "bg-primary text-primary-foreground border-primary shadow-sm"
-              : "bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-          )}
-        >
-          {preset.label}
-        </button>
-      ))}
-    </div>
+    <>
+      <div className={cn("hidden md:flex flex-wrap items-center gap-1.5", className)}>
+        {presets.map((preset) => (
+          <button
+            key={preset.key}
+            onClick={() => handlePresetClick(preset.key)}
+            className={cn(
+              "px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200",
+              "border border-border",
+              activePreset === preset.key
+                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                : "bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            )}
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
+      <select
+        value={activePreset}
+        onChange={(e) => handlePresetClick(e.target.value as DatePreset)}
+        className={cn("md:hidden flex h-8 items-center rounded-lg border border-border bg-card px-2.5 text-xs font-medium text-foreground", className)}
+      >
+        {presets.map((preset) => (
+          <option key={preset.key} value={preset.key}>
+            {preset.label}
+          </option>
+        ))}
+      </select>
+    </>
   )
 }

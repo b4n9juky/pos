@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState, useRef, useCallback } from "react"
+import { Suspense, useState, useRef, useCallback, useEffect } from "react"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { CartPanel } from "@/components/pos/cart-panel"
 import { CheckoutModal } from "@/components/pos/checkout-modal"
@@ -27,13 +27,15 @@ import {
 
 
 function POSPageContent() {
-  const { addItem, items, itemCount, discount, discountAmount, subtotal, tax, total, taxRate, membershipSettings, removeItem, clearCart, setDiscount } = useCart()
+  const { addItem, items, itemCount, discount, discountAmount, subtotal, tax, total, taxRate, membershipSettings, removeItem, clearCart, setDiscount, updateQuantity } = useCart()
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [customerId, setCustomerId] = useState<string>("")
   const [barcode, setBarcode] = useState("")
   const [scanning, setScanning] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const scanInputRef = useRef<HTMLInputElement | null>(null)
+  const [selectedIndex, setSelectedIndex] = useState(-1)
+  const discountInputRef = useRef<HTMLInputElement>(null)
   const searchParams = useSearchParams()
   const standalone = searchParams.get("standalone") === "true"
 
@@ -69,6 +71,14 @@ function POSPageContent() {
     }
   }, [addItem])
 
+  useEffect(() => {
+    if (items.length === 0) {
+      setSelectedIndex(-1)
+    } else if (selectedIndex >= items.length) {
+      setSelectedIndex(items.length - 1)
+    }
+  }, [items.length])
+
   useKeyboard(
     [
       { key: "F2", handler: () => scanInputRef.current?.focus(), ignoreWhenInput: false },
@@ -102,6 +112,55 @@ function POSPageContent() {
         },
       },
       {
+        key: "ArrowDown",
+        handler: (e) => {
+          e.preventDefault()
+          if (items.length === 0) return
+          setSelectedIndex((i) => (i + 1) % items.length)
+        },
+        ignoreWhenInput: false,
+      },
+      {
+        key: "ArrowUp",
+        handler: (e) => {
+          e.preventDefault()
+          if (items.length === 0) return
+          setSelectedIndex((i) => (i <= 0 ? items.length - 1 : i - 1))
+        },
+        ignoreWhenInput: false,
+      },
+      {
+        key: "=",
+        handler: (e) => {
+          e.preventDefault()
+          if (selectedIndex < 0 || selectedIndex >= items.length) return
+          const item = items[selectedIndex]
+          if (item.quantity < item.product.stock) {
+            updateQuantity(item.product.id, item.quantity + 1)
+          }
+        },
+        ignoreWhenInput: false,
+      },
+      {
+        key: "-",
+        handler: (e) => {
+          e.preventDefault()
+          if (selectedIndex < 0 || selectedIndex >= items.length) return
+          const item = items[selectedIndex]
+          updateQuantity(item.product.id, item.quantity - 1)
+        },
+        ignoreWhenInput: false,
+      },
+      {
+        key: "d",
+        ctrlKey: true,
+        handler: (e) => {
+          e.preventDefault()
+          discountInputRef.current?.focus()
+        },
+        ignoreWhenInput: false,
+      },
+      {
         key: "PageUp",
         handler: (e) => {
           e.preventDefault()
@@ -126,17 +185,17 @@ function POSPageContent() {
       <div className="flex h-full flex-col">
         <div className="flex flex-1 overflow-hidden">
           <div className="flex w-full flex-1 flex-col bg-card relative overflow-hidden">
-            <div className="p-5 max-md:p-3 bg-gradient-to-b from-muted/40 to-transparent border-b shrink-0 flex justify-center">
+            <div className="p-5 max-md:p-3 bg-gradient-to-b from-muted/40 to-transparent border-b-2 shrink-0 flex justify-center">
               <div className="w-full max-w-2xl max-md:max-w-full">
                 <div className="mb-3 flex flex-wrap gap-1.5">
                   {[
                     { key: "F2", label: t("Barcode") },
                     { key: "F9", label: t("Cari") },
-                    { key: "F6", label: t("Hold") },
-                    { key: "F7", label: t("Fire") },
+                    { key: "\u2191\u2193", label: t("Select item") },
+                    { key: "+/-", label: t("Qty") },
+                    { key: "Ctrl+D", label: t("Discount") },
                     { key: "Del", label: t("Remove item") },
                     { key: "RCtrl", label: t("Checkout") },
-                    { key: "F8", label: t("Print") },
                     { key: "Esc", label: t("Clear") },
                   ].map(({ key, label }) => (
                     <span
@@ -202,7 +261,7 @@ function POSPageContent() {
               disabled={checkoutOpen}
             />
 
-            <div className="flex items-center justify-between px-5 max-md:px-4 py-2.5 border-b shrink-0 bg-muted/20">
+            <div className="flex items-center justify-between px-5 max-md:px-4 py-2.5 border-b-2 shrink-0 bg-muted/20">
               <div className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4 text-primary" />
                 <h2 className="text-sm font-semibold">{t("Current Sale")}</h2>
@@ -220,12 +279,12 @@ function POSPageContent() {
               )}
             </div>
 
-            <CartPanel />
+            <CartPanel selectedIndex={selectedIndex} onSelectIndex={setSelectedIndex} />
 
             {itemCount > 0 && (
-              <div className="bg-card border-t shadow-[0_-4px_12px_rgba(0,0,0,0.04)] shrink-0">
+              <div className="bg-card border-t-2 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] shrink-0">
                 <div className="flex items-stretch max-md:flex-col">
-                  <div className="flex-1 flex flex-col justify-center px-5 max-md:px-4 py-2 border-r max-md:border-r-0 max-md:border-b gap-0.5">
+                  <div className="flex-1 flex flex-col justify-center px-5 max-md:px-4 py-2 border-r-2 max-md:border-r-0 max-md:border-b-2 gap-0.5">
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>{t("Subtotal")}</span>
                       <span className="tabular-nums font-medium">{formatCurrency(subtotal)}</span>
@@ -244,6 +303,7 @@ function POSPageContent() {
                         )}
                         <div className="relative">
                           <Input
+                            ref={discountInputRef}
                             type="number"
                             placeholder="0"
                             value={discount || ""}
@@ -268,7 +328,7 @@ function POSPageContent() {
                     </div>
                   </div>
                   <div className="flex flex-col w-48 max-md:w-full max-md:flex-row max-md:items-center">
-                    <div className="flex flex-col gap-1.5 p-1.5 border-b max-md:border-b-0 max-md:flex-1">
+                    <div className="flex flex-col gap-1.5 p-1.5 border-b-2 max-md:border-b-0 max-md:flex-1">
                       <Select value={customerId} onValueChange={(v) => setCustomerId(v ?? "")}>
                         <SelectTrigger className="h-8 text-xs flex-1 bg-muted/30 border-muted-foreground/20">
                           <SelectValue placeholder={t("Walk-in customer")} />

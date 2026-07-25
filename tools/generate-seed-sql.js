@@ -13,7 +13,9 @@ async function main() {
 -- Users
 INSERT INTO \`users\` (\`name\`, \`email\`, \`password_hash\`, \`role\`, \`active\`)
 VALUES ('Admin User', 'admin@pos.com', '${hash}', 'admin', true),
-       ('Cashier One', 'cashier@pos.com', '${hash}', 'cashier', true);
+       ('Cashier One', 'cashier@pos.com', '${hash}', 'cashier', true),
+       ('Staff Gudang', 'gudang@pos.com', '${hash}', 'warehouse', true),
+       ('Owner User', 'owner@pos.com', '${hash}', 'owner', true);
 
 -- Categories
 INSERT INTO \`categories\` (\`name\`, \`slug\`, \`description\`)
