@@ -161,14 +161,10 @@ function BuildReceiptBytes($data) {
   }
 
   AddLf $b
-  AddLf $b
-  AddLf $b
 
   if ($autoCut) {
     $b.Add(0x1B); $b.Add(0x64); $b.Add(0x04)  # ESC d 04  Vertical tab
-    $b.Add(0x1B); $b.Add(0x64); $b.Add(0x04)  # ESC d 04  Vertical tab
     $b.Add(0x1D); $b.Add(0x56); $b.Add(0x00)  # GS V 0    Full cut
-    $b.Add(0x1B); $b.Add(0x40)                  # ESC @     Initialize printer
   }
   $b.Add(0x1B); $b.Add(0x70); $b.Add(0x00)    # ESC p 0   Cash drawer pin 2
   $b.Add(0x1B); $b.Add(0x70); $b.Add(0x01)    # ESC p 1   Cash drawer pin 5
@@ -177,7 +173,21 @@ function BuildReceiptBytes($data) {
 }
 
 function SendToPrinter($bytes, $printerName) {
+  # Method 1: Direct copy to printer share (bypasses spooler overhead)
+  $tmpFile = [System.IO.Path]::GetTempPath() + [System.IO.Path]::GetRandomFileName() + ".bin"
+  [System.IO.File]::WriteAllBytes($tmpFile, $bytes)
+  $copyResult = cmd /c "copy /b `"$tmpFile`" `"\\localhost\$printerName`" 2>&1"
+  Remove-Item $tmpFile -Force -ErrorAction SilentlyContinue
+  if ($LASTEXITCODE -eq 0) {
+    Write-Host "  [COPY] $($bytes.Length)B to \\localhost\$printerName"
+    return
+  } else {
+    Write-Host "  [COPY] Failed (exit=$LASTEXITCODE), using spooler"
+  }
+
+  # Method 2: C# WritePrinter through spooler
   [RawPrinter]::Print($printerName, $bytes, "RAW")
+  Write-Host "  [SPOOL] $($bytes.Length)B to $printerName"
 }
 
 # ─── HTTP server ───

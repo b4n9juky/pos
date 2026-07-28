@@ -67,16 +67,13 @@ export async function importProducts(rows: Record<string, unknown>[]): Promise<I
     id: products.id,
     sku: products.sku,
     barcode: products.barcode,
-    name: products.name,
   }).from(products)
 
   const existingBySku = new Map<string, number>()
   const existingByBarcode = new Map<string, number>()
-  const existingByName = new Map<string, number>()
   for (const p of allProducts) {
     existingBySku.set(p.sku, p.id)
     if (p.barcode) existingByBarcode.set(p.barcode, p.id)
-    existingByName.set(p.name.toLowerCase(), p.id)
   }
 
   for (let i = 0; i < rows.length; i++) {
@@ -146,7 +143,6 @@ export async function importProducts(rows: Record<string, unknown>[]): Promise<I
         result.warnings.push({ row: rowNum, message: `SKU "${sku}" already exists — updated` })
         result.updated++
         if (barcode) existingByBarcode.set(barcode, existingId)
-        if (name) existingByName.set(name.toLowerCase(), existingId)
         continue
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Database error"
@@ -158,12 +154,6 @@ export async function importProducts(rows: Record<string, unknown>[]): Promise<I
 
     if (barcode && existingByBarcode.has(barcode)) {
       result.warnings.push({ row: rowNum, message: `Barcode "${barcode}" already used by another product — skipped` })
-      result.failed++
-      continue
-    }
-
-    if (name && existingByName.has(name.toLowerCase())) {
-      result.warnings.push({ row: rowNum, message: `Name "${name}" already exists — skipped` })
       result.failed++
       continue
     }
@@ -184,7 +174,6 @@ export async function importProducts(rows: Record<string, unknown>[]): Promise<I
       })
       existingBySku.set(sku!, insertId)
       if (barcode) existingByBarcode.set(barcode, insertId)
-      if (name) existingByName.set(name.toLowerCase(), insertId)
       result.success++
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Database error"

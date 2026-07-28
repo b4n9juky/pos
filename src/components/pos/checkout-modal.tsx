@@ -68,7 +68,13 @@ export function CheckoutModal({ open, onOpenChange, customerId }: CheckoutModalP
     [
       {
         key: "Enter",
-        handler: () => handlePay(),
+        handler: () => {
+          if (paymentMethod === "cash" && (!amountPaid || Number(amountPaid) === 0)) {
+            handlePay({ amountPaid: total })
+          } else {
+            handlePay()
+          }
+        },
         ignoreWhenInput: false,
       },
     ],

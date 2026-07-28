@@ -22,6 +22,12 @@ interface LabelItem {
   barcode: string
 }
 
+function formatThousands(value: string): string {
+  const digits = value.replace(/\D/g, "")
+  if (!digits) return ""
+  return Number(digits).toLocaleString("id-ID")
+}
+
 interface PrinterDevice {
   name: string
   uid: string
@@ -375,7 +381,8 @@ function BarcodePrintContent() {
 
   // ── Item handlers ──
   function updateItem(idx: number, field: keyof LabelItem, value: string) {
-    setItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: value } : it))
+    const cleaned = field === "price" ? value.replace(/\D/g, "") : value
+    setItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: cleaned } : it))
   }
 
   function removeItem(idx: number) {
@@ -557,7 +564,7 @@ function BarcodePrintContent() {
               {items.map((item, idx) => (
                 <div key={idx} className="grid gap-1.5 grid-cols-[20px_1fr_1fr_24px]">
                   <span className="text-[11px] text-muted-foreground text-center leading-8">{idx + 1}</span>
-                  <Input className="h-8 text-xs px-2" value={item.price} onChange={(e) => updateItem(idx, "price", e.target.value)} placeholder="Rp 0" maxLength={16} />
+                  <Input className="h-8 text-xs px-2" value={formatThousands(item.price)} onChange={(e) => updateItem(idx, "price", e.target.value)} placeholder="Rp 0" maxLength={16} />
                   <Input className="h-8 text-xs px-2 font-mono" value={item.barcode} onChange={(e) => updateItem(idx, "barcode", e.target.value)} placeholder="Nilai barcode" />
                   <button onClick={() => removeItem(idx)} className="h-8 w-6 inline-flex items-center justify-center text-destructive hover:bg-destructive/10 rounded"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>

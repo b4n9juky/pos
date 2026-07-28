@@ -25,6 +25,8 @@ function buildReceipt(printer: ThermalPrinter, data: any) {
   const timeStr = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
   const W = getChars(paperWidth)
 
+  printer.newLine()
+
   printer.alignCenter()
   printer.bold(true)
   printer.println(storeName || "My Store")
@@ -73,12 +75,11 @@ function buildReceipt(printer: ThermalPrinter, data: any) {
   if (cashierName) {
     printer.println("KASIR: " + cashierName)
   }
-  printer.drawLine()
   if (receiptFooter) {
     printer.alignCenter()
     printer.println(receiptFooter)
   }
-  printer.newLine()
+  printer.drawLine()
   printer.newLine()
   printer.newLine()
 }
@@ -157,10 +158,26 @@ export async function POST(req: Request) {
     })
 
     buildReceipt(printer, data)
-    if (data.autoCut !== false) printer.cut()
     printer.openCashDrawer()
 
+    // Send text content first — printer prints immediately
     sendRawToPrinter(data.printerName, printer.getBuffer())
+
+    // Wait for printer to finish printing all lines, THEN cut
+    if (data.autoCut !== false) {
+      setTimeout(() => {
+        const cutPrinter = new ThermalPrinter({
+          type: PrinterTypes.EPSON,
+          interface: "tcp://0.0.0.0:1",
+          width: getChars(data.paperWidth),
+      characterSet: CharacterSet.PC437_USA,
+          removeSpecialCharacters: false,
+          options: { timeout: 5000 },
+        })
+        cutPrinter.cut({ verticalTabAmount: 0 })
+        sendRawToPrinter(data.printerName, cutPrinter.getBuffer())
+      }, 2000)
+    }
 
     return NextResponse.json({ success: true })
   } catch (err: any) {

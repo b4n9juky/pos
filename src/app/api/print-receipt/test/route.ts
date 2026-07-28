@@ -93,9 +93,20 @@ export async function POST(req: Request) {
     printer.println("printer siap digunakan!")
     printer.newLine()
     printer.newLine()
-    printer.cut()
 
     sendRawToPrinter(printerName, printer.getBuffer())
+
+    setTimeout(() => {
+      const cutPrinter = new ThermalPrinter({
+        type: PrinterTypes.EPSON,
+        interface: "tcp://0.0.0.0:1",
+        width: W,
+        characterSet: CharacterSet.PC437_USA,
+        removeSpecialCharacters: false,
+      })
+      cutPrinter.cut()
+      sendRawToPrinter(printerName, cutPrinter.getBuffer())
+    }, 2000)
 
     return NextResponse.json({ success: true })
   } catch (err: any) {

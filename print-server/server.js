@@ -80,6 +80,8 @@ function buildReceipt(printer, data) {
   const timeStr = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
   const W = getChars(paperWidth)
 
+  printer.newLine()
+
   printer.alignCenter()
   printer.bold(true)
   printer.println(storeName || "My Store")
@@ -128,12 +130,11 @@ function buildReceipt(printer, data) {
   if (cashierName) {
     printer.println("KASIR: " + cashierName)
   }
-  printer.drawLine()
   if (receiptFooter) {
     printer.alignCenter()
     printer.println(receiptFooter)
   }
-  printer.newLine()
+  printer.drawLine()
   printer.newLine()
   printer.newLine()
 }
@@ -143,18 +144,27 @@ function createPrinter(paperWidth) {
     type: PrinterTypes.EPSON,
     interface: "tcp://0.0.0.0:1",
     width: getChars(paperWidth),
-    characterSet: CharacterSet.PC850_MULTILINGUAL,
+    characterSet: CharacterSet.PC437_USA,
     removeSpecialCharacters: false,
     options: { timeout: 5000 },
   })
 }
 
 function buildAndPrint(data) {
+  // 1. Send text content only
   const printer = createPrinter(data.paperWidth || 58)
   buildReceipt(printer, data)
-  if (data.autoCut !== false) printer.cut()
   printer.openCashDrawer()
   sendRawToPrinter(data.printerName, printer.getBuffer())
+
+  // 2. Wait for printer to finish printing, then cut separately
+  if (data.autoCut !== false) {
+    setTimeout(() => {
+      const cutPrinter = createPrinter(data.paperWidth || 58)
+      cutPrinter.cut({ verticalTabAmount: 0 })
+      sendRawToPrinter(data.printerName, cutPrinter.getBuffer())
+    }, 2000)
+  }
 }
 
 app.get("/status", (_req, res) => {
