@@ -22,6 +22,9 @@ services:
       start_period: 30s
     networks:
       - pos-network
+    labels:
+      - "io.portainer.stack.group=pos-rahmat"
+      - "io.portainer.stack.service=db"
 
   app:
     build: .
@@ -38,6 +41,10 @@ services:
         condition: service_healthy
     networks:
       - pos-network
+    labels:
+      - "io.portainer.stack.group=pos-rahmat"
+      - "io.portainer.stack.service=app"
+      - "io.portainer.stack.webhook=auto"
 
 volumes:
   pos_data:

@@ -333,7 +333,28 @@ Buka `https://pos.berkahutama.web.id` — harusnya sudah HTTPS.
    - `DB_SEED` — set to `true` only on first deploy
 9. **Deploy the stack**
 
-Portainer will clone the repo, build the image using the `Dockerfile`, and create all containers (db, app). For subsequent updates, use **Stack → Re-pull and redeploy** after pushing new code.
+Portainer will clone the repo, build the image using the `Dockerfile`, and create all containers (db, app).
+
+### Auto-deploy via webhook (push-to-deploy)
+
+Set up GitHub webhook so every `git push` auto-triggers redeploy in Portainer:
+
+1. In Portainer: **Stacks → pos-rahmat → Duplicate / Edit**
+2. Scroll to **Webhook** section → toggle **On**
+3. Copy the webhook URL (looks like `https://<portainer-url>/api/webhooks/<id>`)
+4. In GitHub repo: **Settings → Webhooks → Add webhook**
+   - **Payload URL**: paste Portainer webhook URL
+   - **Content type**: `application/json`
+   - **Secret**: (optional, leave blank)
+   - **Events**: select **Just the push event**
+5. Click **Add webhook**
+
+Now every `git push` to the main branch automatically:
+- Pulls latest code from GitHub
+- Builds new Docker image
+- Redeploys the stack (with zero-downtime via restart policy)
+
+> **Verify**: Push a test commit. In Portainer → **Stacks → pos-rahmat → Webhooks**, check the activity log. Stack will show "updating" during redeploy.
 
 ### Printing in Docker
 
