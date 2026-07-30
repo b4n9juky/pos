@@ -77,27 +77,47 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
     handleFile(f)
   }
 
+  const CHUNK_SIZE = 250
+
+  const mergeResults = (results: ImportResult[], offset: number): ImportResult => {
+    const merged: ImportResult = { success: 0, updated: 0, failed: 0, errors: [], warnings: [] }
+    for (const r of results) {
+      merged.success += r.success
+      merged.updated += r.updated
+      merged.failed += r.failed
+      merged.errors.push(...r.errors.map((e) => ({ ...e, row: e.row + offset })))
+      merged.warnings.push(...r.warnings.map((w) => ({ ...w, row: w.row + offset })))
+    }
+    return merged
+  }
+
   const handleImport = async () => {
     if (parsedRows.length === 0) return
     setImporting(true)
     setResult(null)
     try {
-      let data: ImportResult
+      let aggregated: ImportResult
       if (onImport) {
-        data = await onImport(parsedRows)
+        const results: ImportResult[] = []
+        for (let i = 0; i < parsedRows.length; i += CHUNK_SIZE) {
+          const chunk = parsedRows.slice(i, i + CHUNK_SIZE)
+          const res = await onImport(chunk)
+          results.push(res)
+        }
+        aggregated = mergeResults(results, 2)
       } else {
         const res = await fetch(importUrl!, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ rows: parsedRows }),
         })
-        data = await res.json()
+        aggregated = await res.json()
       }
-      setResult(data)
-      if ((data.success > 0 || data.updated > 0) && onSuccess) onSuccess()
-      if (data.success > 0) toast.success(t("{count} {title} imported", { count: data.success, title: title.toLowerCase() }))
-      if (data.updated > 0) toast.info(t("{count} {title} updated", { count: data.updated, title: title.toLowerCase() }))
-      if (data.failed > 0) toast.error(t("{count} rows failed", { count: data.failed }))
+      setResult(aggregated)
+      if ((aggregated.success > 0 || aggregated.updated > 0) && onSuccess) onSuccess()
+      if (aggregated.success > 0) toast.success(t("{count} {title} imported", { count: aggregated.success, title: title.toLowerCase() }))
+      if (aggregated.updated > 0) toast.info(t("{count} {title} updated", { count: aggregated.updated, title: title.toLowerCase() }))
+      if (aggregated.failed > 0) toast.error(t("{count} rows failed", { count: aggregated.failed }))
     } catch {
       toast.error(t("Import failed"))
     } finally {
