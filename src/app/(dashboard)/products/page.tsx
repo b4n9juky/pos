@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/format"
 import { ImportModal } from "@/components/import-modal"
+import { importProducts } from "@/server/actions/import"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -347,7 +348,7 @@ export default function ProductsPage() {
           onOpenChange={setImportOpen}
           title={t("Products")}
           templateUrl="/api/products/template"
-          importUrl="/api/products/import"
+          onImport={importProducts}
           onSuccess={() => queryClient.invalidateQueries({ queryKey: ["products"] })}
         />
       )}

@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ImportModal } from "@/components/import-modal"
+import { importCategories } from "@/server/actions/import"
 import { t } from "@/lib/translate"
 
 export default function CategoriesPage() {
@@ -176,7 +177,7 @@ export default function CategoriesPage() {
           onOpenChange={setImportOpen}
           title={t("Categories")}
           templateUrl="/api/categories/template"
-          importUrl="/api/categories/import"
+          onImport={importCategories}
           onSuccess={() => queryClient.invalidateQueries({ queryKey: ["categories"] })}
         />
       )}

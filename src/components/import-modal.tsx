@@ -28,11 +28,12 @@ interface ImportModalProps {
   onOpenChange: (open: boolean) => void
   title: string
   templateUrl: string
-  importUrl: string
+  importUrl?: string
+  onImport?: (rows: Record<string, unknown>[]) => Promise<ImportResult>
   onSuccess?: () => void
 }
 
-export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl, onSuccess }: ImportModalProps) {
+export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl, onImport, onSuccess }: ImportModalProps) {
   const [file, setFile] = useState<File | null>(null)
   const [parsedRows, setParsedRows] = useState<Record<string, unknown>[]>([])
   const [sheetSummary, setSheetSummary] = useState<{ name: string; count: number }[]>([])
@@ -81,12 +82,17 @@ export function ImportModal({ open, onOpenChange, title, templateUrl, importUrl,
     setImporting(true)
     setResult(null)
     try {
-      const res = await fetch(importUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows: parsedRows }),
-      })
-      const data: ImportResult = await res.json()
+      let data: ImportResult
+      if (onImport) {
+        data = await onImport(parsedRows)
+      } else {
+        const res = await fetch(importUrl!, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rows: parsedRows }),
+        })
+        data = await res.json()
+      }
       setResult(data)
       if ((data.success > 0 || data.updated > 0) && onSuccess) onSuccess()
       if (data.success > 0) toast.success(t("{count} {title} imported", { count: data.success, title: title.toLowerCase() }))
