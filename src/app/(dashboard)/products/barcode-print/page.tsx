@@ -28,6 +28,12 @@ function formatThousands(value: string): string {
   return Number(digits).toLocaleString("id-ID")
 }
 
+function formatPriceLabel(raw: string): string {
+  const digits = String(raw || "").replace(/Rp/gi, "").replace(/\D/g, "")
+  if (!digits) return ""
+  return `Rp ${Number(digits).toLocaleString("id-ID")}`
+}
+
 interface PrinterDevice {
   name: string
   uid: string
@@ -271,7 +277,7 @@ function BarcodePrintContent() {
     function labelZPL(xOff: number, yOff: number, cw: number, rh: number, item: LabelItem | null): string {
       if (!item) return ""
       const price = item.price || ""
-      const displayPrice = price.startsWith("Rp") ? price : `Rp ${price}`
+      const displayPrice = formatPriceLabel(price)
       const bcVal = item.barcode || ""
       const pFont = priceFontSize > 0 ? priceFontSize : 28
       const bcOffXD = Math.round(bcOffsetX * DPI)
@@ -793,7 +799,7 @@ function BarcodePrintContent() {
                 const bcHeightAuto = Math.max(60, Math.min(Math.round(pvRemainH / previewScale * DPI * 0.85), Math.round(labelH * DPI * 0.65)))
                 const bcHeightDotsEst = bcHeight > 0 ? bcHeight : bcHeightAuto
                 const pFontEst = priceFontSize > 0 ? priceFontSize : 28
-                const priceStr = item?.price ? (item.price.startsWith("Rp") ? item.price : `Rp ${item.price}`) : ""
+                const priceStr = item?.price ? formatPriceLabel(item.price) : ""
 
                 return (
                   <div key={`${rowIdx}-${colIdx}`} className="relative" style={{ width: previewW, height: previewH }}>
