@@ -35,7 +35,10 @@ $sqlFiles = @(
   "0003_icy_ender_wiggin.sql",
   "0004_complex_winter_soldier.sql",
   "0005_bumpy_whiplash.sql",
-  "0006_young_george_stacy.sql"
+  "0006_young_george_stacy.sql",
+  "0007_worthless_christian_walker.sql",
+  "0008_flippant_machine_man.sql",
+  "0009_good_roughhouse.sql"
 )
 
 $lines = @()
@@ -94,7 +97,7 @@ $psLock = Join-Path $DistDir "print-server\node_modules\.package-lock.json"
 if (Test-Path $psLock) { Remove-Item -Force $psLock -ErrorAction SilentlyContinue }
 
 # Copy batch scripts
-foreach ($file in @(  "setup.bat", "start.bat", "uninstall.bat", "seed-db.bat", "db-upgrade.bat", "fix-auth-url.bat", "README.md")) {
+foreach ($file in @(  "setup.bat", "start.bat", "uninstall.bat", "update.bat", "restore.bat", "seed-db.bat", "db-upgrade.bat", "fix-auth-url.bat", "cashier.bat", "kiosk-setup.bat", "README.md")) {
   $src = Join-Path $ProjectRoot "portable\$file"
   if (Test-Path $src) {
     Copy-Item -Path $src -Destination $DistDir
